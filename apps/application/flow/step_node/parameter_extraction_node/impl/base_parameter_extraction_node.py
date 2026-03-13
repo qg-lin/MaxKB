@@ -55,9 +55,9 @@ def generate_example(variable_list):
     return {variable['field']: None for variable in variable_list}
 
 
-def generate_content(input_variable, variable_list):
+def generate_content(input_variable, variable_list, prompt_template_str=prompt):
     properties = generate_properties(variable_list)
-    prompt_template = PromptTemplate.from_template(prompt, template_format='jinja2')
+    prompt_template = PromptTemplate.from_template(prompt_template_str, template_format='jinja2')
     value = prompt_template.format(properties=properties, question=input_variable)
     return value
 
@@ -99,7 +99,15 @@ class BaseParameterExtractionNode(IParameterExtractionNode):
         workspace_id = self.workflow_manage.get_body().get('workspace_id')
         chat_model = get_model_instance_by_model_workspace_id(model_id, workspace_id,
                                                               **model_params_setting)
-        content = generate_content(input_variable, variable_list)
+        prompt_type = self.node_params.get('prompt_type', 'system')
+        custom_prompt_text = self.node_params.get('custom_prompt', '')
+        if prompt_type == 'custom' and custom_prompt_text and custom_prompt_text.strip():
+            try:
+                content = generate_content(input_variable, variable_list, custom_prompt_text)
+            except Exception:
+                content = generate_content(input_variable, variable_list)
+        else:
+            content = generate_content(input_variable, variable_list)
         response = chat_model.invoke([HumanMessage(content=content)])
         result = json_loads(response.content, variable_list)
         return NodeResult({'result': result, **result}, {})
@@ -110,6 +118,7 @@ class BaseParameterExtractionNode(IParameterExtractionNode):
             "index": index,
             'run_time': self.context.get('run_time'),
             'type': self.node.type,
+            'prompt_type': self.node_params.get('prompt_type', 'system'),
             'request': self.context.get('request'),
             'result': self.context.get('result'),
             'status': self.status,

@@ -76,6 +76,38 @@
             v-model="form_data.input_variable"
           />
         </el-form-item>
+        <!-- 提示词配置区域 -->
+        <el-form-item>
+          <template #label>
+            <span>{{ $t('workflow.nodes.parameterExtractionNode.prompt.label') }}</span>
+          </template>
+          <div class="w-full">
+            <el-radio-group v-model="form_data.prompt_type" class="mb-8">
+              <el-radio value="system">
+                {{ $t('workflow.nodes.parameterExtractionNode.prompt.systemDefault') }}
+              </el-radio>
+              <el-radio value="custom">
+                {{ $t('workflow.nodes.parameterExtractionNode.prompt.custom') }}
+              </el-radio>
+            </el-radio-group>
+            <!-- 系统默认：只读展示 -->
+            <el-input
+              v-if="form_data.prompt_type !== 'custom'"
+              type="textarea"
+              :autosize="{ minRows: 4, maxRows: 8 }"
+              :model-value="DEFAULT_SYSTEM_PROMPT"
+              disabled
+            />
+            <!-- 自定义：可编辑 -->
+            <el-input
+              v-else
+              type="textarea"
+              :autosize="{ minRows: 4, maxRows: 12 }"
+              v-model="form_data.custom_prompt"
+              :placeholder="$t('workflow.nodes.parameterExtractionNode.prompt.placeholder')"
+            />
+          </div>
+        </el-form-item>
         <el-form-item
           prop="variable_list"
           :rules="{
@@ -97,7 +129,7 @@
   </NodeContainer>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref, inject } from 'vue'
+import { computed, onMounted, ref, inject, watch } from 'vue'
 import NodeContainer from '@/workflow/common/NodeContainer.vue'
 import NodeCascader from '@/workflow/common/NodeCascader.vue'
 import AIModeParamSettingDialog from '@/views/application/component/AIModeParamSettingDialog.vue'
@@ -157,11 +189,29 @@ function getSelectModel() {
     })
 }
 
+const DEFAULT_SYSTEM_PROMPT = `Please strictly process the text according to the following requirements:
+**Task**:
+Extract specified field information from given text
+
+**Enter text**:
+{{question}}
+
+**Extract configuration**:
+{{properties}}
+
+**Rule**:
+- Strictly follow the data and field of Extract configuration
+- If not found, use null value
+- Only return pure JSON without additional text
+- Keep the string format neat`
+
 const form = {
   input_variable: [],
   model_params_setting: {},
   model_id: '',
   variable_list: [],
+  prompt_type: 'system',
+  custom_prompt: '',
 }
 
 const form_data = computed({
@@ -196,6 +246,18 @@ const validate = async () => {
 onMounted(() => {
   getSelectModel()
   set(props.nodeModel, 'validate', validate)
+  if (props.nodeModel.properties.node_data && !props.nodeModel.properties.node_data.prompt_type) {
+    set(props.nodeModel.properties.node_data, 'prompt_type', 'system')
+  }
 })
+
+watch(
+  () => form_data.value.prompt_type,
+  (newVal) => {
+    if (newVal === 'custom' && !form_data.value.custom_prompt) {
+      set(props.nodeModel.properties.node_data, 'custom_prompt', DEFAULT_SYSTEM_PROMPT)
+    }
+  },
+)
 </script>
 <style lang="scss" scoped></style>

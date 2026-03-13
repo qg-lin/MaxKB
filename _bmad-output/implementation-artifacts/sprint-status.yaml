@@ -1,39 +1,39 @@
-# generated: 2026-03-04 13:43:25
+# generated: 2026-03-11
 # project: MaxKB
 # project_key: NOKEY
 # tracking_system: file-system
-# story_location: /Users/lqg/code/opensource/MaxKB/_bmad-output/implementation-artifacts
+# story_location: _bmad-output/implementation-artifacts
 
 # STATUS DEFINITIONS:
 # ==================
 # Epic Status:
 #   - backlog: Epic not yet started
 #   - in-progress: Epic actively being worked on
-#   - backlog: All stories in epic completed
+#   - done: All stories in epic completed
 #
 # Epic Status Transitions:
 #   - backlog → in-progress: Automatically when first story is created (via create-story)
-#   - in-progress → backlog: Manually when all stories reach 'backlog' status
+#   - in-progress → done: Manually when all stories reach 'done' status
 #
 # Story Status:
 #   - backlog: Story only exists in epic file
 #   - ready-for-dev: Story file created in stories folder
 #   - in-progress: Developer actively working on implementation
 #   - review: Ready for code review (via Dev's code-review workflow)
-#   - backlog: Story completed
+#   - done: Story completed
 #
 # Retrospective Status:
 #   - optional: Can be completed but not required
-#   - backlog: Retrospective has been completed
+#   - done: Retrospective has been completed
 #
 # WORKFLOW NOTES:
 # ===============
 # - Epic transitions to 'in-progress' automatically when first story is created
 # - Stories can be worked in parallel if team capacity allows
-# - SM typically creates next story after previous one is 'backlog' to incorporate learnings
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-03-04 13:43:25
+generated: 2026-03-11
 project: MaxKB
 project_key: NOKEY
 tracking_system: file-system
@@ -74,3 +74,13 @@ development_status:
   6-1-多重物理与逻辑租户隔离的硬管控边界: done
   6-2-联邦治理下的知识合规共享穿透配置: done
   epic-6-retrospective: done
+
+  epic-7: done
+  7-1-表单收集构造器-文本字段新增引用变量赋值方式: done
+  7-2-表单收集后端-运行时解析文本字段引用变量并注入默认值: done
+  epic-7-retrospective: done
+
+  epic-8: done
+  8-1-参数提取节点前端-新增自定义提示词配置界面: done
+  8-2-参数提取节点后端-运行时使用自定义提示词执行提取: done
+  epic-8-retrospective: done

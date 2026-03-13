@@ -104,6 +104,16 @@ class BaseFormNode(IFormNode):
                 field['default_value'] = self.workflow_manage.get_reference_field(field.get('default_value')[0],
                                                                                   field.get('default_value')[1:])
 
+        if ['TextInput', 'TextareaInput'].__contains__(field.get('input_type')):
+            if field.get('default_value_assignment_method') == 'ref_variables':
+                default_value = field.get('default_value')
+                if isinstance(default_value, list) and len(default_value) > 0:
+                    ref_value = self.workflow_manage.get_reference_field(
+                        default_value[0], default_value[1:])
+                    field['default_value'] = ref_value if isinstance(ref_value, str) else ''
+                else:
+                    field['default_value'] = ''
+
         return field
 
     def execute(self, form_field_list, form_content_format, form_data, **kwargs) -> NodeResult:

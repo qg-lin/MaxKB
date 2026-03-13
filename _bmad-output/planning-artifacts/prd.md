@@ -135,6 +135,8 @@ MaxKB (Max Knowledge Brain) 定位为强大且开箱即用的企业级智能体�
 - **FR19:** 管理员必须能自定义系统 Logo、主题配色等全局外观设置，以及对话框浮窗入口、AI 头像、免责声明等应用级显示元素。*(限PE/EE)*
 ### 8. Resource Governance (资源治理域)
 - **FR20:** 管理员必须能在多租户模式下配置知识库、工具和模型资源的跨组织共享策略。*(限EE)*
+### 9. Agentic Workflow Enhancements (工作流增强域)
+- **FR21:** 编排工程师在配置"表单收集"节点时，必须能为 TextInput（单行文本）和 TextareaInput（多行文本）字段设置"引用变量"赋值方式，使字段的默认值可动态绑定工作流上游节点的输出变量，而非仅限于静态文本。
 
 ## Non-Functional Requirements (非功能性要求)
 ### Performance Metrics (性能量化标准)

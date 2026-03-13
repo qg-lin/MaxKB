@@ -500,6 +500,12 @@ export default {
         variableListPlaceholder: '請添加選取參數',
         parameterType: '參數類型',
       },
+      prompt: {
+        label: '提示詞',
+        systemDefault: '系統預設',
+        custom: '自訂',
+        placeholder: '可使用模板變數：{{question}}（輸入文本）和 {{properties}}（提取配置）',
+      },
     },
   },
   compare: {

@@ -1,5 +1,5 @@
 ---
-stepsCompleted: ['step-01-validate-prerequisites']
+stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 inputDocuments: ['_bmad-output/planning-artifacts/prd.md', '_bmad-output/planning-artifacts/architecture.md']
 ---
 
@@ -33,6 +33,8 @@ This document provides the complete epic and story breakdown for MaxKB, decompos
 - FR18: 管理员必须能通过开放 API 对系统资源进行程序化管理操作。(限PE/EE)
 - FR19: 管理员必须能自定义系统 Logo、主题配色等全局外观设置，以及对话框浮窗入口、AI 头像、免责声明等应用级显示元素。(限PE/EE)
 - FR20: 管理员必须能在多租户模式下配置知识库、工具和模型资源的跨组织共享策略。(限EE)
+- FR21: 编排工程师在配置"表单收集"节点时，必须能为 TextInput（单行文本）和 TextareaInput（多行文本）字段设置"引用变量"赋值方式，使字段的默认值可动态绑定工作流上游节点的输出变量，而非仅限于静态文本。
+- FR22: 编排工程师在配置"参数提取"节点时，必须能自定义该节点用于提取参数的提示词（Prompt），而非仅使用系统默认的提示词模板，从而更精准地控制参数提取的行为和结果。
 
 ### NonFunctional Requirements
 
@@ -73,6 +75,8 @@ FR17: Epic 5 - 跨端留痕全量审计日志
 FR18: Epic 5 - 面向开放 API 的全程序化资源管理
 FR19: Epic 5 - Logo、外观及声明定制化能力白标
 FR20: Epic 6 - 跨租户跨组织资源的合规共享配置
+FR21: Epic 7 - TextInput/TextareaInput 字段支持引用变量赋值方式
+FR22: Epic 8 - 参数提取节点自定义提示词支持
 
 ## Epic List
 
@@ -99,6 +103,14 @@ FR20: Epic 6 - 跨租户跨组织资源的合规共享配置
 ### Epic 6: 集团级多租户隔离与联邦治理 (Multi-Tenant Governance)
 巨型集团管理者能够开辟出物理或逻辑隔离的多个 Workspace 与租户空间，并进行严谨的数据保护与资源跨域授权共享。
 **FRs covered:** FR2, FR20
+
+### Epic 7: 表单收集节点动态变量绑定增强 (Form Node Dynamic Variable Binding)
+编排工程师在配置"表单收集"节点时，能够为单行文本（TextInput）和多行文本（TextareaInput）字段选择"引用变量"赋值方式，将字段默认值与工作流上游节点的输出动态绑定，使表单预填内容随流程上下文自动适配。
+**FRs covered:** FR21
+
+### Epic 8: 参数提取节点自定义提示词增强 (Parameter Extraction Custom Prompt)
+编排工程师在配置"参数提取"节点时，能够自定义用于参数提取的提示词模板，替代系统默认的固定提示词，从而根据具体业务场景精准控制参数提取的逻辑与输出质量。
+**FRs covered:** FR22
 
 ## Epic 1: 核心知识库与智能文本解析 (Core Knowledge Base & Processing)
 
@@ -342,4 +354,75 @@ So that 既保护敏感又规避集团重复维护通用公共资产引发的冗
 **Given** 某租户设定存在一个被标记共享的特征知识源同时受到 EE 企业版规范管辖
 **When** 他方租户发起针对该知识库的调阅
 **Then** 该调取能够被跨租户查询器无损转发处理，但其禁止一切越权的变更及覆写操作
+
+## Epic 7: 表单收集节点动态变量绑定增强 (Form Node Dynamic Variable Binding)
+
+编排工程师在配置"表单收集"节点时，能够为单行文本（TextInput）和多行文本（TextareaInput）字段选择"引用变量"赋值方式，将字段默认值与工作流上游节点的输出动态绑定，使表单预填内容随流程上下文自动适配。
+
+### Story 7.1: 表单收集构造器 - 文本字段新增"引用变量"赋值方式
+
+As a 编排工程师,
+I want 在配置"表单收集"节点的 TextInput 或 TextareaInput 字段时，能够切换赋值方式为"引用变量"并通过变量选择器选取上游节点的输出字段,
+So that 表单字段的默认值可以在工作流执行时从上游节点动态注入，而不必每次手动维护静态文本.
+
+**Acceptance Criteria:**
+
+**Given** 我在"表单收集"节点的字段设置弹窗中，选择了 TextInput 或 TextareaInput 类型
+**When** 我查看"默认值"配置区域
+**Then** 应显示"赋值方式"单选组，包含"自定义"和"引用变量"两个选项（"引用变量"选项仅在工作流上下文中、即 `inject('getModel')` 有值时展示）
+**And** 选择"引用变量"后，原文本输入框隐藏，显示 NodeCascader 变量选择器供选取上游节点字段
+**And** 选择"自定义"时，恢复原有静态文本输入框，隐藏 NodeCascader
+**And** 保存后，字段数据包含 `default_value_assignment_method: 'ref_variables'` 及 `default_value: [nodeId, ...fieldPath]` 数组结构，与 SingleSelect 引用变量格式保持一致
+**And** `rander()` 反序列化方法能正确还原 `default_value_assignment_method` 及对应的 `default_value`，编辑已有字段时赋值方式不丢失
+
+### Story 7.2: 表单收集后端 - 运行时解析文本字段引用变量并注入默认值
+
+As a 编排工程师,
+I want 配置了"引用变量"赋值方式的 TextInput/TextareaInput 字段，在工作流执行时能自动解析并填入上游节点的实际输出值,
+So that 终端用户打开表单时看到的默认值是根据当前流程上下文动态生成的，而不是一个固定字符串.
+
+**Acceptance Criteria:**
+
+**Given** "表单收集"节点中存在 `default_value_assignment_method == 'ref_variables'` 的 TextInput 或 TextareaInput 字段
+**When** 工作流执行到该节点、`reset_field()` 方法被调用时
+**Then** 后端识别该字段类型及赋值方式，调用 `workflow_manage.get_reference_field(field['default_value'][0], field['default_value'][1:])` 解析变量路径，将返回值转为字符串后赋给 `field['default_value']`
+**And** 若解析结果为 None 或非字符串类型，回退为空字符串 `''`，不抛出异常，不中断流程执行
+**And** `default_value_assignment_method == 'custom'`（或该字段不存在）的 TextInput/TextareaInput 字段行为与改动前完全一致，不受影响
+**And** 改动仅限于 `apps/application/flow/step_node/form_node/impl/base_form_node.py` 的 `reset_field()` 方法，不修改其他节点类型的处理逻辑
+
+## Epic 8: 参数提取节点自定义提示词增强 (Parameter Extraction Custom Prompt)
+
+编排工程师在配置"参数提取"节点时，能够自定义用于参数提取的提示词模板，替代系统默认的固定提示词，从而根据具体业务场景精准控制参数提取的逻辑与输出质量。
+
+### Story 8.1: 参数提取节点前端 - 新增自定义提示词配置界面
+
+As a 编排工程师,
+I want 在配置"参数提取"节点时，能看到一个提示词编辑区域，可以选择使用系统默认提示词或切换为自定义提示词并编辑其内容,
+So that 能根据具体业务场景调整参数提取的指令逻辑，而不必受限于系统内置的固定模板.
+
+**Acceptance Criteria:**
+
+**Given** 我在工作流编排画布中，打开了"参数提取"节点的配置面板
+**When** 我查看节点设置区域
+**Then** 应在"提取参数"表格下方显示"提示词"配置区域，包含"系统默认"和"自定义"两个选项（默认选中"系统默认"）
+**And** 选择"系统默认"时，以只读/折叠方式展示当前系统默认提示词内容供参考
+**And** 选择"自定义"时，显示一个可编辑的文本域（textarea），预填系统默认提示词内容，用户可自由修改
+**And** 自定义提示词文本域中应以 placeholder 或提示方式告知用户可用的模板变量：`{{question}}`（输入文本）和 `{{properties}}`（提取配置）
+**And** 保存后，节点数据 `node_data` 中应包含 `prompt_type`（`'system'` 或 `'custom'`）和 `custom_prompt`（自定义提示词文本）字段
+**And** 编辑已有节点时，能正确还原之前保存的提示词类型和内容
+
+### Story 8.2: 参数提取节点后端 - 运行时使用自定义提示词执行提取
+
+As a 编排工程师,
+I want 配置了自定义提示词的"参数提取"节点在工作流执行时，使用我编写的提示词而非系统默认提示词来调用大模型,
+So that 参数提取的行为和结果完全按照我的业务场景定制的指令执行.
+
+**Acceptance Criteria:**
+
+**Given** "参数提取"节点的 `node_data` 中存在 `prompt_type == 'custom'` 且 `custom_prompt` 非空
+**When** 工作流执行到该节点、`execute()` 方法被调用时
+**Then** 后端应使用 `custom_prompt` 替代模块级默认 `prompt` 常量，通过 `PromptTemplate.from_template()` 渲染模板（仍支持 `{{question}}` 和 `{{properties}}` 变量）
+**And** 若 `prompt_type == 'system'`（或该字段不存在），行为与改动前完全一致，使用系统默认提示词
+**And** 若 `custom_prompt` 为空字符串或 None，即使 `prompt_type == 'custom'`，也应回退使用系统默认提示词，不抛出异常
+**And** 改动仅限于 `apps/application/flow/step_node/parameter_extraction_node/impl/base_parameter_extraction_node.py`，不修改其他节点类型的处理逻辑
 

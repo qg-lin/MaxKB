@@ -515,6 +515,12 @@ You are a master of problem optimization, adept at accurately inferring user int
         variableListPlaceholder: 'Please add extraction parameters',
         parameterType: 'Parameter Type',
       },
+      prompt: {
+        label: 'Prompt',
+        systemDefault: 'System Default',
+        custom: 'Custom',
+        placeholder: 'Available template variables: {{question}} (input text) and {{properties}} (extraction config)',
+      },
     },
   },
   compare: {

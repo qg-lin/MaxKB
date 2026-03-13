@@ -506,6 +506,12 @@ export default {
         variableListPlaceholder: '请添加提取参数',
         parameterType: '参数类型',
       },
+      prompt: {
+        label: '提示词',
+        systemDefault: '系统默认',
+        custom: '自定义',
+        placeholder: '可使用模板变量：{{question}}（输入文本）和 {{properties}}（提取配置）',
+      },
     },
   },
   compare: {
