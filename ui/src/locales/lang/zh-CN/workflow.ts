@@ -510,7 +510,7 @@ export default {
         label: '提示词',
         systemDefault: '系统默认',
         custom: '自定义',
-        placeholder: '可使用模板变量：{{question}}（输入文本）和 {{properties}}（提取配置）',
+        placeholder: '支持模板变量：question（输入文本）和 properties（提取配置），使用双花括号包裹',
       },
     },
   },

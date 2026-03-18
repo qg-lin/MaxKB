@@ -519,7 +519,7 @@ You are a master of problem optimization, adept at accurately inferring user int
         label: 'Prompt',
         systemDefault: 'System Default',
         custom: 'Custom',
-        placeholder: 'Available template variables: {{question}} (input text) and {{properties}} (extraction config)',
+        placeholder: 'Available template variables: question (input text) and properties (extraction config). Wrap with double curly braces.',
       },
     },
   },

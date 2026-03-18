@@ -504,7 +504,7 @@ export default {
         label: '提示詞',
         systemDefault: '系統預設',
         custom: '自訂',
-        placeholder: '可使用模板變數：{{question}}（輸入文本）和 {{properties}}（提取配置）',
+        placeholder: '支援模板變數：question（輸入文本）和 properties（提取配置），使用雙花括號包裹',
       },
     },
   },
