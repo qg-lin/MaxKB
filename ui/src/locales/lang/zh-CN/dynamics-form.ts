@@ -68,6 +68,7 @@ export default {
   Select: {
     label: '选项值',
     placeholder: '请输入选项值',
+    importCsv: '导入CSV',
   },
   tag: {
     label: '标签',

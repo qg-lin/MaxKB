@@ -68,6 +68,7 @@ export default {
   Select: {
     label: '選項值',
     placeholder: '請輸入選項值',
+    importCsv: '导入CSV',
   },
   tag: {
     label: '標籤',
