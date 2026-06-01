@@ -68,7 +68,7 @@ export default {
   Select: {
     label: 'Option Value',
     placeholder: 'Please enter an option value',
-    importCsv: '导入CSV',
+    importCsv: 'Import CSV',
   },
   tag: {
     label: 'Tag',
