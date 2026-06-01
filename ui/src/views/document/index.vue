@@ -870,7 +870,7 @@ const paginationConfig = ref({
 })
 
 const ImportDocumentDialogRef = ref()
-const multipleTableRef = ref<InstanceType<typeof ElTable>>()
+const multipleTableRef = ref()
 const multipleSelection = ref<any[]>([])
 const title = ref('')
 

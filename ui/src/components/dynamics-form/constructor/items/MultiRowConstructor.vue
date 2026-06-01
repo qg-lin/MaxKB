@@ -36,6 +36,12 @@
         </el-radio>
       </el-radio-group>
     </el-row>
+    <el-row v-if="formValue.assignment_method == 'ref_variables'" style="width: 100%; margin-top: 12px" :gutter="10">
+      <el-radio-group v-model="formValue.ref_variables_mode">
+        <el-radio value="only" size="large">{{ $t('dynamicsForm.refVariablesMode.only', '纯引用变量') }}</el-radio>
+        <el-radio value="with_candidates" size="large">{{ $t('dynamicsForm.refVariablesMode.withCandidates', '引用变量+候选值') }}</el-radio>
+      </el-radio-group>
+    </el-row>
   </el-form-item>
   <el-form-item
     v-if="formValue.assignment_method == 'ref_variables'"
@@ -50,6 +56,51 @@
       :placeholder="$t('workflow.variable.placeholder')"
       v-model="formValue.option_list"
     />
+  </el-form-item>
+  <el-form-item v-if="formValue.assignment_method == 'ref_variables' && formValue.ref_variables_mode == 'with_candidates'">
+    <template #label>
+      <div class="flex-between">
+        {{ $t('dynamicsForm.candidate.label', '候选值') }}
+        <el-button link type="primary" @click.stop="addCandidate()">
+          <AppIcon iconName="app-add-outlined" class="mr-4"></AppIcon>
+          {{ $t('common.add') }}
+        </el-button>
+      </div>
+    </template>
+
+    <el-row style="width: 100%" :gutter="10">
+      <el-col :span="10">
+        {{ $t('dynamicsForm.tag.label') }}
+      </el-col>
+      <el-col :span="12">
+        {{ $t('dynamicsForm.Select.label') }}
+      </el-col>
+    </el-row>
+    <el-row
+      style="width: 100%"
+      v-for="(option, $index) in formValue.candidate_list"
+      :key="$index"
+      :gutter="10"
+      class="mb-8"
+    >
+      <el-col :span="10">
+        <el-input
+          v-model="formValue.candidate_list[$index].label"
+          :placeholder="$t('dynamicsForm.tag.placeholder')"
+        />
+      </el-col>
+      <el-col :span="12">
+        <el-input
+          v-model="formValue.candidate_list[$index].value"
+          :placeholder="$t('dynamicsForm.Select.label')"
+        />
+      </el-col>
+      <el-col :span="1">
+        <el-button link class="ml-8" @click.stop="delCandidate($index)">
+          <AppIcon iconName="app-delete"></AppIcon>
+        </el-button>
+      </el-col>
+    </el-row>
   </el-form-item>
   <el-form-item v-if="formValue.assignment_method == 'custom'">
     <template #label>
@@ -175,7 +226,6 @@ const formValue = computed({
 const default_ref_variables_value_rule = {
   required: true,
   validator: (rule: any, value: any, callback: any) => {
-    console.log(value.length)
     if (!(Array.isArray(value) && value.length > 1)) {
       callback(
         t('workflow.variable.Referencing') + t('common.required'),
@@ -197,6 +247,18 @@ const delOption = (index: number) => {
   }
   formValue.value.option_list.splice(index, 1)
 }
+
+const addCandidate = () => {
+  if (!formValue.value.candidate_list) {
+    formValue.value.candidate_list = []
+  }
+  formValue.value.candidate_list.push({ value: '', label: '' })
+}
+
+const delCandidate = (index: number) => {
+  formValue.value.candidate_list.splice(index, 1)
+}
+
 const formField = computed<FormField>(() => {
   return { field: '', ...getData() }
 })
@@ -209,12 +271,16 @@ const getData = () => {
     value_field: 'value',
     option_list: formValue.value.option_list,
     assignment_method: formValue.value.assignment_method || 'custom',
+    ref_variables_mode: formValue.value.ref_variables_mode || 'only',
+    candidate_list: formValue.value.candidate_list || [],
   }
 }
 const rander = (form_data: any) => {
   formValue.value.option_list = form_data.option_list || []
   formValue.value.default_value = form_data.default_value
   formValue.value.assignment_method = form_data.assignment_method || 'custom'
+  formValue.value.ref_variables_mode = form_data.ref_variables_mode || 'only'
+  formValue.value.candidate_list = form_data.candidate_list || []
 }
 
 defineExpose({ getData, rander })
@@ -222,6 +288,8 @@ onMounted(() => {
   formValue.value.option_list = []
   formValue.value.default_value = ''
   formValue.value.assignment_method = 'custom'
+  formValue.value.ref_variables_mode = 'only'
+  formValue.value.candidate_list = []
   if (formValue.value.show_default_value === undefined) {
     formValue.value.show_default_value = true
   }

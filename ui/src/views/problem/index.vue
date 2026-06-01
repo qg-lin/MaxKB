@@ -220,7 +220,7 @@ const problemIndexMap = computed<Dict<number>>(() => {
     .reduce((pre, next) => ({ ...pre, ...next }), {})
 })
 
-const multipleTableRef = ref<InstanceType<typeof ElTable>>()
+const multipleTableRef = ref()
 const multipleSelection = ref<any[]>([])
 
 function relateProblem(row?: any) {

@@ -124,4 +124,11 @@ export default {
       popover_default: '是否為預設值',
     },
   },
+  refVariablesMode: {
+    only: '純參考變量',
+    withCandidates: '參考變量+候選值',
+  },
+  candidate: {
+    label: '候選值',
+  },
 }

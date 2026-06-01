@@ -95,9 +95,29 @@ class BaseFormNode(IFormNode):
                 option_list = self.workflow_manage.get_reference_field(field.get('option_list')[0],
                                                                        field.get('option_list')[1:])
                 option_list = option_list if isinstance(option_list, list) else []
+                # 先从引用变量的option_list获取默认值
+                ref_default_value = get_default_option(option_list, field.get('input_type'),
+                                                      field.get('value_field'))
+                # 如果是引用变量+候选值模式，合并候选值
+                if field.get('ref_variables_mode') == 'with_candidates':
+                    candidate_list = field.get('candidate_list', [])
+                    if isinstance(candidate_list, list) and len(candidate_list) > 0:
+                        # 将候选值合并到选项列表
+                        option_list = option_list + candidate_list
+                        # 简单的去重（基于value）
+                        seen = set()
+                        unique_options = []
+                        for opt in option_list:
+                            if isinstance(opt, dict) and 'value' in opt:
+                                if opt['value'] not in seen:
+                                    seen.add(opt['value'])
+                                    unique_options.append(opt)
+                            else:
+                                unique_options.append(opt)
+                        option_list = unique_options
                 field['option_list'] = option_list
-                field['default_value'] = get_default_option(option_list, field.get('input_type'),
-                                                            field.get('value_field'))
+                # 使用引用变量的默认值，而不是合并后的（避免候选值的default干扰）
+                field['default_value'] = ref_default_value
 
         if ['JsonInput'].__contains__(field.get('input_type')):
             if field.get('default_value_assignment_method') == 'ref_variables':

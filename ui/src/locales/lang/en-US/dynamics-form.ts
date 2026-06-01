@@ -124,4 +124,11 @@ export default {
       popover_default: 'Is Default',
     },
   },
+  refVariablesMode: {
+    only: 'Reference Variables Only',
+    withCandidates: 'Reference Variables + Candidates',
+  },
+  candidate: {
+    label: 'Candidates',
+  },
 }

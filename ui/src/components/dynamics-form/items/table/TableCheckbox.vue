@@ -78,7 +78,7 @@ const evalF: (text: string, row: any) => string = (text: string, row: any) => {
 }
 const emit = defineEmits(['update:modelValue', 'change'])
 
-const multipleTableRef = ref<InstanceType<typeof ElTable>>()
+const multipleTableRef = ref()
 
 const _data = computed({
   get() {

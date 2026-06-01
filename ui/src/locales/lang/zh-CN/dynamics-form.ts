@@ -123,4 +123,11 @@ export default {
       popover_default: '是否为默认值',
     },
   },
+  refVariablesMode: {
+    only: '纯引用变量',
+    withCandidates: '引用变量+候选值',
+  },
+  candidate: {
+    label: '候选值',
+  },
 }

@@ -508,7 +508,7 @@ function updateData(triggerId: string, data: TriggerData, msg: string) {
 }
 
 const multipleSelection = ref<any[]>([])
-const multipleTableRef = ref<InstanceType<typeof ElTable>>()
+const multipleTableRef = ref()
 
 const triggerData = ref<any[]>([])
 

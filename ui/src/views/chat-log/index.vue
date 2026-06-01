@@ -379,7 +379,7 @@ const daterange = ref({
   end_time: '',
 })
 
-const multipleTableRef = ref<InstanceType<typeof ElTable>>()
+const multipleTableRef = ref()
 const multipleSelection = ref<any[]>([])
 
 const ChatRecordRef = ref()

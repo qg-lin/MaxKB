@@ -82,7 +82,7 @@ const evalF = (text: string, row: any) => {
 }
 const emit = defineEmits(['update:modelValue', 'change'])
 
-const singleTableRef = ref<InstanceType<typeof ElTable>>()
+const singleTableRef = ref()
 
 const _data = computed({
   get() {
