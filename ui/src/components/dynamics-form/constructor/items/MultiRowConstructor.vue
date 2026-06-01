@@ -110,6 +110,10 @@
           <AppIcon iconName="app-add-outlined" class="mr-4"></AppIcon>
           {{ $t('common.add') }}
         </el-button>
+        <el-button link type="primary" @click.stop="importCsv()">
+          <AppIcon iconName="app-import-outlined" class="mr-4"></AppIcon>
+          {{ $t('dynamicsForm.Select.importCsv') }}
+        </el-button>
       </div>
     </template>
 
@@ -178,13 +182,22 @@
     >
     </MultiRow>
   </el-form-item>
+  <input
+    ref="csvInputRef"
+    type="file"
+    accept=".csv"
+    style="display: none"
+    @change="handleCsvFileChange"
+  />
 </template>
 <script setup lang="ts">
-import { computed, onMounted, inject } from 'vue'
+import { computed, onMounted, inject, ref } from 'vue'
 import MultiRow from '@/components/dynamics-form/items/MultiRow.vue'
 import NodeCascader from '@/workflow/common/NodeCascader.vue'
 import type { FormField } from '@/components/dynamics-form/type'
 import { t } from '@/locales'
+import { parseCsv } from '@/api/form-node'
+import { ElMessage } from 'element-plus'
 const getModel = inject('getModel') as any
 
 const assignment_method_option_list = computed(() => {
@@ -257,6 +270,35 @@ const addCandidate = () => {
 
 const delCandidate = (index: number) => {
   formValue.value.candidate_list.splice(index, 1)
+}
+
+const csvInputRef = ref()
+const existingOptionValues = computed(() => {
+  const list = formValue.value.option_list || []
+  return new Set(list.map(o => o.value))
+})
+
+const importCsv = () => {
+  csvInputRef.value?.click()
+}
+
+const handleCsvFileChange = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  try {
+    const res = await parseCsv(file)
+    if (res.data && Array.isArray(res.data)) {
+      const newOptions = res.data.filter(opt => !existingOptionValues.value.has(opt.value))
+      formValue.value.option_list = [...(formValue.value.option_list || []), ...newOptions]
+      ElMessage.success(`成功导入${newOptions.length}个选项`)
+    }
+  } catch (e: any) {
+    ElMessage.error(e.message || '导入失败')
+  }
+  if (csvInputRef.value) {
+    csvInputRef.value.value = ''
+  }
 }
 
 const formField = computed<FormField>(() => {
