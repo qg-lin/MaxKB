@@ -20,12 +20,13 @@ class CsvParseOptionHandle:
 
     def parse(self, file) -> list:
         buffer = file.read()
+        encoding = 'utf-8'
         try:
-            encoding = detect(buffer)['encoding']
-            content = buffer.decode(encoding)
+            detected = detect(buffer)
+            encoding = detected['encoding'] or 'utf-8'
         except Exception as e:
             maxkb_logger.error(f"Error detecting encoding: {e}")
-            content = buffer.decode('utf-8', errors='ignore')
+            encoding = 'utf-8'
 
         try:
             reader = csv.reader(io.TextIOWrapper(io.BytesIO(buffer), encoding=encoding))
