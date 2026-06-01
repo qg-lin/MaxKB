@@ -66,7 +66,7 @@
           {{ $t('common.add') }}
         </el-button>
         <el-button link type="primary" @click.stop="importCandidateCsv()">
-          <AppIcon iconName="app-import-outlined" class="mr-4"></AppIcon>
+          <AppIcon iconName="app-import" class="mr-4"></AppIcon>
           {{ $t('dynamicsForm.Select.importCsv') }}
         </el-button>
       </div>
@@ -116,7 +116,7 @@
           {{ $t('common.add') }}
         </el-button>
         <el-button link type="primary" @click.stop="importCsv()">
-          <AppIcon iconName="app-import-outlined" class="mr-4"></AppIcon>
+          <AppIcon iconName="app-import" class="mr-4"></AppIcon>
           {{ $t('dynamicsForm.Select.importCsv') }}
         </el-button>
       </div>
