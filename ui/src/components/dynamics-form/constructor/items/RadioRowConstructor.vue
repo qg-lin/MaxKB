@@ -65,6 +65,10 @@
           <AppIcon iconName="app-add-outlined" class="mr-4"></AppIcon>
           {{ $t('common.add') }}
         </el-button>
+        <el-button link type="primary" @click.stop="importCandidateCsv()">
+          <AppIcon iconName="app-import-outlined" class="mr-4"></AppIcon>
+          {{ $t('dynamicsForm.Select.importCsv') }}
+        </el-button>
       </div>
     </template>
 
@@ -189,6 +193,13 @@
     style="display: none"
     @change="handleCsvFileChange"
   />
+  <input
+    ref="candidateCsvInputRef"
+    type="file"
+    accept=".csv"
+    style="display: none"
+    @change="handleCandidateCsvFileChange"
+  />
 </template>
 <script setup lang="ts">
 import { computed, onMounted, inject, ref } from 'vue'
@@ -278,8 +289,18 @@ const existingOptionValues = computed(() => {
   return new Set(list.map(o => o.value))
 })
 
+const candidateCsvInputRef = ref()
+const existingCandidateValues = computed(() => {
+  const list = formValue.value.candidate_list || []
+  return new Set(list.map(o => o.value))
+})
+
 const importCsv = () => {
   csvInputRef.value?.click()
+}
+
+const importCandidateCsv = () => {
+  candidateCsvInputRef.value?.click()
 }
 
 const handleCsvFileChange = async (event: Event) => {
@@ -298,6 +319,26 @@ const handleCsvFileChange = async (event: Event) => {
   }
   if (csvInputRef.value) {
     csvInputRef.value.value = ''
+  }
+}
+
+const handleCandidateCsvFileChange = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  try {
+    const res = await parseCsv(file)
+    if (res.data && Array.isArray(res.data)) {
+      const newOptions = res.data.filter(opt => !existingCandidateValues.value.has(opt.value))
+      formValue.value.candidate_list = [...(formValue.value.candidate_list || []), ...newOptions]
+      ElMessage.success(`成功导入${newOptions.length}个候选值`)
+    }
+  } catch (e: any) {
+    ElMessage.error(e.message || '导入失败')
+  }
+  // 清空input
+  if (candidateCsvInputRef.value) {
+    candidateCsvInputRef.value.value = ''
   }
 }
 
