@@ -82,7 +82,7 @@
     </el-row>
     <el-row
       style="width: 100%"
-      v-for="(option, $index) in formValue.candidate_list"
+      v-for="(option, $index) in displayedCandidates"
       :key="$index"
       :gutter="10"
       class="mb-8"
@@ -105,6 +105,11 @@
         </el-button>
       </el-col>
     </el-row>
+    <div v-if="hasMoreCandidates" class="load-more">
+      <el-button link type="primary" @click.stop="loadMoreCandidates">
+        点击加载更多
+      </el-button>
+    </div>
   </el-form-item>
   <el-form-item v-if="formValue.assignment_method === 'custom'">
     <template #label>
@@ -131,7 +136,7 @@
     </el-row>
     <el-row
       style="width: 100%"
-      v-for="(option, $index) in formValue.option_list"
+      v-for="(option, $index) in displayedOptions"
       :key="$index"
       :gutter="10"
       class="mb-8"
@@ -154,6 +159,11 @@
         </el-button>
       </el-col>
     </el-row>
+    <div v-if="hasMoreOptions" class="load-more">
+      <el-button link type="primary" @click.stop="loadMoreOptions">
+        点击加载更多
+      </el-button>
+    </div>
   </el-form-item>
 
   <el-form-item
@@ -293,6 +303,35 @@ const existingCandidateValues = computed(() => {
   const list = formValue.value.candidate_list || []
   return new Set(list.map(o => o.value))
 })
+
+const optionDisplayedCount = ref(20)
+const candidateDisplayedCount = ref(20)
+
+const displayedOptions = computed(() => {
+  const list = formValue.value.option_list || []
+  return list.slice(0, optionDisplayedCount.value)
+})
+
+const displayedCandidates = computed(() => {
+  const list = formValue.value.candidate_list || []
+  return list.slice(0, candidateDisplayedCount.value)
+})
+
+const hasMoreOptions = computed(() => {
+  return (formValue.value.option_list?.length || 0) > optionDisplayedCount.value
+})
+
+const hasMoreCandidates = computed(() => {
+  return (formValue.value.candidate_list?.length || 0) > candidateDisplayedCount.value
+})
+
+const loadMoreOptions = () => {
+  optionDisplayedCount.value += 20
+}
+
+const loadMoreCandidates = () => {
+  candidateDisplayedCount.value += 20
+}
 
 const importCsv = () => {
   csvInputRef.value?.click()
