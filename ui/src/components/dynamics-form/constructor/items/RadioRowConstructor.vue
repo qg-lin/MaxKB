@@ -60,7 +60,7 @@
   <el-form-item v-if="formValue.assignment_method == 'ref_variables' && formValue.ref_variables_mode == 'with_candidates'">
     <template #label>
       <div class="flex-between">
-        {{ $t('dynamicsForm.candidate.label', '候选值') }} <span class="candidate-count">({{ formValue.candidate_list?.length || 0 }})</span>
+        {{ $t('dynamicsForm.candidate.label', '候选值') }}<span class="candidate-count">(总计 {{ formValue.candidate_list?.length || 0 }})</span>
         <el-button link type="primary" @click.stop="addCandidate()">
           <AppIcon iconName="app-add-outlined" class="mr-4"></AppIcon>
           {{ $t('common.add') }}
@@ -429,6 +429,6 @@ onMounted(() => {
 }
 .candidate-count {
   color: orange;
-  margin-left: 4px;
+  margin-left: 0;
 }
 </style>
