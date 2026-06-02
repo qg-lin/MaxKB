@@ -309,13 +309,13 @@ const delCandidate = (index: number) => {
 const csvInputRef = ref()
 const existingOptionValues = computed(() => {
   const list = formValue.value.option_list || []
-  return new Set(list.map(o => o.value))
+  return new Set(list.map((o: any) => o.value))
 })
 
 const candidateCsvInputRef = ref()
 const existingCandidateValues = computed(() => {
   const list = formValue.value.candidate_list || []
-  return new Set(list.map(o => o.value))
+  return new Set(list.map((o: any) => o.value))
 })
 
 const optionDisplayedCount = ref(20)

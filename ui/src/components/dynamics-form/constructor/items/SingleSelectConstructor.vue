@@ -304,7 +304,7 @@ const csvInputRef = ref()
 const candidateCsvInputRef = ref()
 const existingOptionValues = computed(() => {
   const list = formValue.value.option_list || []
-  return new Set(list.map(o => o.value))
+  return new Set(list.map((o: any) => o.value))
 })
 const optionDisplayedCount = ref(20)
 const candidateDisplayedCount = ref(20)
@@ -372,7 +372,7 @@ const expandAllCandidates = async () => {
 }
 const existingCandidateValues = computed(() => {
   const list = formValue.value.candidate_list || []
-  return new Set(list.map(o => o.value))
+  return new Set(list.map((o: any) => o.value))
 })
 
 const importCsv = () => {
