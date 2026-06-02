@@ -108,6 +108,9 @@
       <el-button link type="primary" @click.stop="loadMoreCandidates">
         点击加载更多
       </el-button>
+      <el-button link type="primary" @click.stop="expandAllCandidates" class="ml-8">
+        点击展开全部
+      </el-button>
     </div>
   </el-form-item>
   <el-form-item v-if="formValue.assignment_method == 'custom'">
@@ -161,6 +164,9 @@
     <div v-if="hasMoreOptions" class="load-more">
       <el-button link type="primary" @click.stop="loadMoreOptions">
         点击加载更多
+      </el-button>
+      <el-button link type="primary" @click.stop="expandAllOptions" class="ml-8">
+        点击展开全部
       </el-button>
     </div>
   </el-form-item>
@@ -221,7 +227,7 @@ import { computed, onMounted, inject, watch, ref } from 'vue'
 import NodeCascader from '@/workflow/common/NodeCascader.vue'
 import { t } from '@/locales'
 import { parseCsv } from '@/api/form-node'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 const getModel = inject('getModel') as any
 
 const assignment_method_option_list = computed(() => {
@@ -327,6 +333,42 @@ const loadMoreOptions = () => {
 
 const loadMoreCandidates = () => {
   candidateDisplayedCount.value += 20
+}
+
+const expandAllOptions = async () => {
+  const total = formValue.value.option_list?.length || 0
+  if (total <= 100) {
+    optionDisplayedCount.value = total
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      '数据量过大，全部展开可能会影响页面性能，确认是否全部展开？',
+      '提示',
+      { type: 'warning' }
+    )
+    optionDisplayedCount.value = total
+  } catch {
+    // 用户取消
+  }
+}
+
+const expandAllCandidates = async () => {
+  const total = formValue.value.candidate_list?.length || 0
+  if (total <= 100) {
+    candidateDisplayedCount.value = total
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      '数据量过大，全部展开可能会影响页面性能，确认是否全部展开？',
+      '提示',
+      { type: 'warning' }
+    )
+    candidateDisplayedCount.value = total
+  } catch {
+    // 用户取消
+  }
 }
 const existingCandidateValues = computed(() => {
   const list = formValue.value.candidate_list || []
