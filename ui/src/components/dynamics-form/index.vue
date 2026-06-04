@@ -27,6 +27,7 @@
         :form-value="formValue"
         :formfield-list="formFieldList"
         :parent_field="parent_field"
+        :form-config="formConfig"
       >
       </FormItem>
     </template>
@@ -67,6 +68,10 @@ const props = withDefaults(
     parent_field?: string
 
     modelValue?: Dict<any>
+    /**
+     * 表单级配置
+     */
+    formConfig?: { hide_when_no_value?: boolean }
   }>(),
   { view: false, defaultItemWidth: '75%', otherParams: () => {} },
 )
@@ -81,10 +86,30 @@ const ruleFormRef = ref<FormInstance>()
 
 const formFieldRef = ref<Array<InstanceType<typeof FormItem>>>([])
 /**
+ * 严格空值判定：null / undefined / 空串 / 空数组 视为空
+ * 0、false、非空对象/Map 视为有值
+ */
+const isEmpty = (value: any): boolean => {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string' && value === '') return true
+  if (Array.isArray(value) && value.length === 0) return true
+  return false
+}
+
+/**
+ * 解析"无值隐藏"开关最终值：字段级覆盖表单级
+ */
+const resolveHideWhenNoValue = (field: FormField): boolean => {
+  if (field.hide_when_no_value !== undefined) return field.hide_when_no_value
+  return props.formConfig?.hide_when_no_value === true
+}
+
+/**
  * 当前 field是否展示
  * @param field
  */
 const show = (field: FormField) => {
+  // 1. 现有关系显隐逻辑
   if (field.relation_show_field_dict) {
     const keys = Object.keys(field.relation_show_field_dict)
     for (const index in keys) {
@@ -93,15 +118,19 @@ const show = (field: FormField) => {
       if (v && v !== undefined && v !== null) {
         const values = field.relation_show_field_dict[key]
         if (values && values.length > 0) {
-          return values.includes(v)
-        } else {
-          return true
+          if (!values.includes(v)) return false
         }
       } else {
         return false
       }
     }
   }
+
+  // 2. 新增：无值隐藏（必填字段不做无值隐藏）
+  if (!field.required && resolveHideWhenNoValue(field)) {
+    if (isEmpty(formValue.value[field.field])) return false
+  }
+
   return true
 }
 
@@ -189,16 +218,19 @@ const trigger = (
 /**
  * 初始化默认数据
  */
-const initDefaultData = (formField: FormField) => {
-  if (
-    formField.default_value &&
-    (formValue.value[formField.field] === undefined ||
-      formValue.value[formField.field] === null ||
-      !formValue.value[formField.field]) &&
-    formValue.value[formField.field] != false
-  ) {
-    if (formField.show_default_value === true) {
-      formValue.value[formField.field] = formField.default_value
+const initDefaultData = (formField?: FormField) => {
+  const fields = formField ? [formField] : formFieldList.value
+  for (const field of fields) {
+    if (
+      field.default_value &&
+      (formValue.value[field.field] === undefined ||
+        formValue.value[field.field] === null ||
+        !formValue.value[field.field]) &&
+      formValue.value[field.field] != false
+    ) {
+      if (field.show_default_value === true) {
+        formValue.value[field.field] = field.default_value
+      }
     }
   }
 }
@@ -220,12 +252,25 @@ const render = (
     if (typeof render_data == 'string') {
       get(render_data, {}, loading).then((ok) => {
         formFieldList.value = ok.data
+        initDefaultData()
+        const form_data = data ? data : {}
+        if (form_data) {
+          const value = getFormDefaultValue(formFieldList.value, form_data)
+          formValue.value = _.cloneDeep(value)
+        }
       })
     } else if (render_data instanceof Array) {
       formFieldList.value = render_data
+      initDefaultData()
+      const form_data = data ? data : {}
+      if (form_data) {
+        const value = getFormDefaultValue(formFieldList.value, form_data)
+        formValue.value = _.cloneDeep(value)
+      }
     } else if (typeof render_data === 'function') {
       render_data().then((ok: any) => {
         formFieldList.value = ok.data
+        initDefaultData()
         const form_data = data ? data : {}
         if (form_data) {
           const value = getFormDefaultValue(formFieldList.value, form_data)
@@ -235,6 +280,12 @@ const render = (
     } else {
       render_data.then((ok) => {
         formFieldList.value = ok.data
+        initDefaultData()
+        const form_data = data ? data : {}
+        if (form_data) {
+          const value = getFormDefaultValue(formFieldList.value, form_data)
+          formValue.value = _.cloneDeep(value)
+        }
       })
     }
     const form_data = data ? data : {}

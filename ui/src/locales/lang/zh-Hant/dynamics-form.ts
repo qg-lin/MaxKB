@@ -44,6 +44,10 @@ export default {
       label: '是否必填',
       requiredMessage: '是否必填 為必填屬性',
     },
+    hideWhenNoValue: {
+      label: '無值隱藏',
+      tip: '當該欄位值為空時自動隱藏',
+    },
     input_type: {
       label: '組件類型',
       placeholder: '請選擇組件類型',

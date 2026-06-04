@@ -6,6 +6,7 @@
       require-asterisk-position="right"
       ref="dynamicsFormRef"
       :render_data="form_field_list"
+      :formConfig="form_config"
       label-suffix=":"
       v-model="form_data"
       :model="form_data"
@@ -50,6 +51,9 @@ const form_field_list = computed(() => {
     return form_setting_data.value.form_field_list
   }
   return []
+})
+const form_config = computed(() => {
+  return form_setting_data.value.form_config || {}
 })
 const is_submit = computed(() => {
   if (_submit.value) {

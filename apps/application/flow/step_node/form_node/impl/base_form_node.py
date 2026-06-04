@@ -147,7 +147,8 @@ class BaseFormNode(IFormNode):
         form_field_list = [self.reset_field(field) for field in form_field_list]
         form_setting = {"form_field_list": form_field_list, "runtime_node_id": self.runtime_node_id,
                         "chat_record_id": self.flow_params_serializer.data.get("chat_record_id"),
-                        "is_submit": self.context.get("is_submit", False)}
+                        "is_submit": self.context.get("is_submit", False),
+                        "form_config": self.node_params_serializer.data.get("form_config") or {}}
         form = f'<form_rander>{json.dumps(form_setting, ensure_ascii=False)}</form_rander>'
         context = self.workflow_manage.get_workflow_content()
         form_content_format = self.workflow_manage.reset_prompt(form_content_format)
@@ -166,7 +167,8 @@ class BaseFormNode(IFormNode):
         form_setting = {"form_field_list": form_field_list, "runtime_node_id": self.runtime_node_id,
                         "chat_record_id": self.flow_params_serializer.data.get("chat_record_id"),
                         'form_data': self.context.get('form_data', {}),
-                        "is_submit": self.context.get("is_submit", False)}
+                        "is_submit": self.context.get("is_submit", False),
+                        "form_config": self.node_params_serializer.data.get("form_config") or {}}
         form = f'<form_rander>{json.dumps(form_setting, ensure_ascii=False)}</form_rander>'
         context = self.workflow_manage.get_workflow_content()
         form_content_format = self.workflow_manage.reset_prompt(form_content_format)
@@ -183,7 +185,8 @@ class BaseFormNode(IFormNode):
         form_setting = {"form_field_list": form_field_list, "runtime_node_id": self.runtime_node_id,
                         "chat_record_id": self.flow_params_serializer.data.get("chat_record_id"),
                         'form_data': self.context.get('form_data', {}),
-                        "is_submit": self.context.get("is_submit", False)}
+                        "is_submit": self.context.get("is_submit", False),
+                        "form_config": self.node_params_serializer.data.get("form_config") or {}}
         form = f'<form_rander>{json.dumps(form_setting, ensure_ascii=False)}</form_rander>'
         context = self.workflow_manage.get_workflow_content()
         form_content_format = self.workflow_manage.reset_prompt(form_content_format)

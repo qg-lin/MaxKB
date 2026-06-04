@@ -44,6 +44,10 @@ export default {
       label: 'Required',
       requiredMessage: 'Required is a required property',
     },
+    hideWhenNoValue: {
+      label: 'Hide When Empty',
+      tip: 'Auto-hide this field when its value is empty',
+    },
     input_type: {
       label: 'Type',
       placeholder: 'Please select a type',

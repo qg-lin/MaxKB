@@ -51,6 +51,17 @@
       <el-switch v-model="form_data.required" :active-value="true" :inactive-value="false" />
     </el-form-item>
     <el-form-item
+      :label="$t('dynamicsForm.paramForm.hideWhenNoValue.label')"
+      @click.prevent
+    >
+      <el-switch
+        v-model="form_data.hide_when_no_value"
+        :active-value="true"
+        :inactive-value="false"
+        :disabled="form_data.required"
+      />
+    </el-form-item>
+    <el-form-item
       :label="$t('dynamicsForm.paramForm.input_type.label')"
       :required="true"
       prop="input_type"
@@ -77,7 +88,7 @@
   </el-form>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick, watch } from 'vue'
 import type { FormInstance } from 'element-plus'
 import _ from 'lodash'
 import { input_type_list as input_type_list_data } from '@/components/dynamics-form/constructor/data'
@@ -86,6 +97,7 @@ const props = withDefaults(
   defineProps<{
     modelValue?: any
     input_type_list?: Array<{ label: string; value: string }>
+    formConfig?: { hide_when_no_value?: boolean }
   }>(),
   {
     input_type_list: () =>
@@ -106,7 +118,18 @@ const form_data = ref<any>({
   tooltip: '',
   required: false,
   input_type: '',
+  hide_when_no_value: undefined,
 })
+
+// 必填时禁用无值隐藏，重置其值
+watch(
+  () => form_data.value.required,
+  (newVal) => {
+    if (newVal) {
+      form_data.value.hide_when_no_value = undefined
+    }
+  }
+)
 const rules = {
   label: [{ required: true, message: t('dynamicsForm.paramForm.name.requiredMessage') }],
   field: [{ required: true, message: t('dynamicsForm.paramForm.field.requiredMessage') }],
@@ -129,6 +152,7 @@ const getData = () => {
     field: form_data.value.field,
     default_value: form_data.value.default_value,
     show_default_value: form_data.value.show_default_value,
+    hide_when_no_value: form_data.value.hide_when_no_value,
     ...componentFormRef.value.getData(),
   }
 }
@@ -143,6 +167,9 @@ const validate = () => {
 onMounted(() => {
   if (props.modelValue) {
     rander(props.modelValue)
+  } else if (props.formConfig?.hide_when_no_value !== undefined) {
+    // 新增字段时，读取表单级设置作为默认值
+    form_data.value.hide_when_no_value = props.formConfig.hide_when_no_value
   }
 })
 const rander = (data: any) => {
@@ -150,6 +177,9 @@ const rander = (data: any) => {
   form_data.value.field = data.field
   if (data.show_default_value !== undefined) {
     form_data.value.show_default_value = data.show_default_value
+  }
+  if (data.hide_when_no_value !== undefined) {
+    form_data.value.hide_when_no_value = data.hide_when_no_value
   }
   if (data.input_type) {
     form_data.value.input_type = data.input_type + 'Constructor'

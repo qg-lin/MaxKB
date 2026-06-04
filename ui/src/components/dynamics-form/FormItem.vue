@@ -16,6 +16,7 @@
         v-model="labelValue"
         :form-value="formValue"
         v-bind="label_attrs"
+        :form-config="formConfig"
       ></component>
     </template>
     <component
@@ -68,6 +69,8 @@ const props = defineProps<{
   formfieldList: Array<FormField>
 
   parent_field?: string
+
+  formConfig?: { hide_when_no_value?: boolean }
 }>()
 
 const emit = defineEmits(['change', 'changeLabel'])

@@ -13,6 +13,7 @@
       label-position="top"
       require-asterisk-position="right"
       ref="dynamicsFormConstructorRef"
+      :formConfig="formConfig"
     ></DynamicsFormConstructor>
     <template #footer>
       <span class="dialog-footer">
@@ -27,7 +28,11 @@ import { ref } from 'vue'
 import DynamicsFormConstructor from '@/components/dynamics-form/constructor/index.vue'
 import { t } from '@/locales'
 const props = withDefaults(
-  defineProps<{ title?: string; addFormField: (form_data: any) => void }>(),
+  defineProps<{
+    title?: string
+    addFormField: (form_data: any) => void
+    formConfig?: { hide_when_no_value?: boolean }
+  }>(),
   { title: t('common.param.addParam') }
 )
 const dialogVisible = ref<boolean>(false)

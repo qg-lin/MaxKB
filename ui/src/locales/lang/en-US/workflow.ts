@@ -260,6 +260,10 @@ You are a master of problem optimization, adept at accurately inferring user int
       },
       formAllContent: 'All Form Content',
       formSetting: 'Form Configuration',
+      hideWhenNoValue: {
+        label: 'Hide Empty Fields',
+        tip: 'Applies to all fields by default; field-level settings can override',
+      },
     },
     documentExtractNode: {
       label: 'Document Content Extraction',

@@ -259,6 +259,10 @@ export default {
       },
       formAllContent: '表單全部內容',
       formSetting: '表單配置',
+      hideWhenNoValue: {
+        label: '表單無值隱藏',
+        tip: '預設對所有欄位生效，欄位級設定可覆寫',
+      },
     },
     documentExtractNode: {
       label: '文檔內容提取',

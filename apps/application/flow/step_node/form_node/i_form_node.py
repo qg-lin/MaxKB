@@ -20,6 +20,7 @@ class FormNodeParamsSerializer(serializers.Serializer):
     form_field_list = serializers.ListField(required=True, label=_("Form Configuration"))
     form_content_format = serializers.CharField(required=True, label=_('Form output content'))
     form_data = serializers.DictField(required=False, allow_null=True, label=_("Form Data"))
+    form_config = serializers.DictField(required=False, allow_null=True, label=_("Form Config"))
 
 
 class IFormNode(INode):

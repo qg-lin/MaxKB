@@ -47,6 +47,7 @@ const props = defineProps<{
   modelValue?: any
   formValue: any
   view?: boolean
+  formConfig?: { hide_when_no_value?: boolean }
 }>()
 const emit = defineEmits(['update:modelValue'])
 const dialogVisible = ref<boolean>(false)
@@ -66,6 +67,18 @@ const close = () => {
  * 当前 field是否展示
  * @param field
  */
+const isEmpty = (value: any): boolean => {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string' && value === '') return true
+  if (Array.isArray(value) && value.length === 0) return true
+  return false
+}
+
+const resolveHideWhenNoValue = (field: any): boolean => {
+  if (field.hide_when_no_value !== undefined) return field.hide_when_no_value
+  return props.formConfig?.hide_when_no_value === true
+}
+
 const show = (field: any) => {
   if (field.relation_show_field_dict) {
     const keys = Object.keys(field.relation_show_field_dict)
@@ -75,15 +88,18 @@ const show = (field: any) => {
       if (v && v !== undefined && v !== null) {
         const values = field.relation_show_field_dict[key]
         if (values && values.length > 0) {
-          return values.includes(v)
-        } else {
-          return true
+          if (!values.includes(v)) return false
         }
       } else {
         return false
       }
     }
   }
+
+  if (!field.required && resolveHideWhenNoValue(field)) {
+    if (isEmpty(props.formValue[field.field])) return false
+  }
+
   return true
 }
 const submit = () => {

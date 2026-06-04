@@ -48,6 +48,21 @@
           />
         </el-form-item>
         <el-form-item
+          :label="$t('workflow.nodes.formNode.hideWhenNoValue.label')"
+          @click.prevent
+        >
+          <div class="flex align-center">
+            <el-switch
+              v-model="form_data.form_config.hide_when_no_value"
+              :active-value="true"
+              :inactive-value="false"
+            />
+            <span class="ml-8 lighter">
+              {{ $t('workflow.nodes.formNode.hideWhenNoValue.tip') }}
+            </span>
+          </div>
+        </el-form-item>
+        <el-form-item
           :label="$t('workflow.nodes.formNode.formSetting')"
           @click.prevent
         >
@@ -136,7 +151,7 @@
         </el-form-item>
       </el-form>
     </el-card>
-    <AddFormCollect ref="addFormCollectRef" :addFormField="addFormField"></AddFormCollect>
+    <AddFormCollect ref="addFormCollectRef" :addFormField="addFormField" :formConfig="form_data.form_config"></AddFormCollect>
     <EditFormCollect ref="editFormCollectRef" :editFormField="editFormField"></EditFormCollect>
   </NodeContainer>
 </template>
@@ -145,7 +160,7 @@ import NodeContainer from '@/workflow/common/NodeContainer.vue'
 import AddFormCollect from '@/workflow/common/AddFormCollect.vue'
 import EditFormCollect from '@/workflow/common/EditFormCollect.vue'
 import { type FormInstance } from 'element-plus'
-import { ref, onMounted, computed, provide } from 'vue'
+import { ref, onMounted, computed, provide, watch } from 'vue'
 import { input_type_list } from '@/components/dynamics-form/constructor/data'
 import { MsgError } from '@/utils/message'
 import { set, cloneDeep } from 'lodash'
@@ -208,10 +223,14 @@ const form = ref<any>({
 {{form}}
 ${t('workflow.nodes.formNode.form_content_format2')}`,
   form_field_list: [],
+  form_config: { hide_when_no_value: false },
 })
 const form_data = computed({
   get: () => {
     if (props.nodeModel.properties.node_data) {
+      if (!props.nodeModel.properties.node_data.form_config) {
+        set(props.nodeModel.properties.node_data, 'form_config', { hide_when_no_value: false })
+      }
       return props.nodeModel.properties.node_data
     } else {
       set(props.nodeModel.properties, 'node_data', form.value)
@@ -270,9 +289,27 @@ function onDragHandle() {
   })
 }
 onMounted(() => {
+  if (!form_data.value.form_config) {
+    set(form_data.value, 'form_config', { hide_when_no_value: false })
+  }
   set(props.nodeModel, 'validate', validate)
   sync_form_field_list()
   props.nodeModel.graphModel.eventCenter.emit('refresh_incoming_node_field')
 })
+
+// 切换表单级无值隐藏时，同步所有已有非必填字段（必填字段不受无值隐藏约束）
+watch(
+  () => form_data.value.form_config?.hide_when_no_value,
+  (newVal) => {
+    if (form_data.value.form_field_list) {
+      form_data.value.form_field_list.forEach((field: any) => {
+        // 开启时：非必填字段设为 true，必填字段不受影响
+        // 关闭时：全部设为 undefined（跟随表单级）
+        field.hide_when_no_value = newVal === true ? (field.required ? undefined : true) : undefined
+      })
+      sync_form_field_list()
+    }
+  }
+)
 </script>
 <style lang="scss" scoped></style>
