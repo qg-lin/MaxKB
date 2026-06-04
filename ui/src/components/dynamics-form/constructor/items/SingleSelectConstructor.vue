@@ -194,18 +194,12 @@
       />
     </div>
 
-    <el-select
+    <el-select-v2
       v-model="formValue.default_value"
       :teleported="false"
       popper-class="max-w-350"
-    >
-      <el-option
-        v-for="(option, index) in formValue.option_list"
-        :key="index"
-        :label="option.label"
-        :value="option.value"
-      />
-    </el-select>
+      :options="defaultValueOptions"
+    />
   </el-form-item>
   <input
     ref="csvInputRef"
@@ -244,6 +238,14 @@ const assignment_method_option_list = computed(() => {
     })
   }
   return option_list
+})
+
+const defaultValueOptions = computed(() => {
+  const list = formValue.value.option_list || []
+  return list.map((option: any) => ({
+    value: option.value,
+    label: option.label,
+  }))
 })
 
 const model = computed(() => {
