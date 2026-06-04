@@ -72,44 +72,20 @@
       </div>
     </template>
 
-    <el-row style="width: 100%" :gutter="10">
-      <el-col :span="10">
-        {{ $t('dynamicsForm.tag.label') }}
-      </el-col>
-      <el-col :span="12">
-        {{ $t('dynamicsForm.Select.label') }}
-      </el-col>
-    </el-row>
-    <el-row
-      style="width: 100%"
-      v-for="(option, $index) in displayedCandidates"
-      :key="$index"
-      :gutter="10"
-      class="mb-8"
-    >
-      <el-col :span="10">
-        <el-input
-          v-model="formValue.candidate_list[$index].label"
-          :placeholder="$t('dynamicsForm.tag.placeholder')"
-        />
-      </el-col>
-      <el-col :span="12">
-        <el-input
-          v-model="formValue.candidate_list[$index].value"
-          :placeholder="$t('dynamicsForm.Select.label')"
-        />
-      </el-col>
-      <el-col :span="1">
-        <el-button link class="ml-8" @click.stop="delCandidate($index)">
-          <AppIcon iconName="app-delete"></AppIcon>
-        </el-button>
-      </el-col>
-    </el-row>
-    <div v-if="hasMoreCandidates" class="load-more">
-      <el-button link type="primary" @click.stop="loadMoreCandidates">
+    <OptionListEditor
+      ref="candidateEditorRef"
+      :model-value="formValue.candidate_list"
+      :label-header="$t('dynamicsForm.tag.label')"
+      :value-header="$t('dynamicsForm.Select.label')"
+      :label-placeholder="$t('dynamicsForm.tag.placeholder')"
+      :value-placeholder="$t('dynamicsForm.Select.label')"
+      @delete="delCandidate"
+    />
+    <div v-if="formValue.candidate_list?.length > 20" class="load-more">
+      <el-button link type="primary" @click.stop="scrollCandidateMore">
         点击加载更多
       </el-button>
-      <el-button link type="primary" @click.stop="expandAllCandidates" class="ml-8">
+      <el-button link type="primary" @click.stop="scrollCandidateAll" class="ml-8">
         点击展开全部
       </el-button>
     </div>
@@ -129,44 +105,20 @@
         </el-button>
       </div>
     </template>
-    <el-row style="width: 100%" :gutter="10">
-      <el-col :span="10">
-        {{ $t('dynamicsForm.tag.label') }}
-      </el-col>
-      <el-col :span="12">
-        {{ $t('dynamicsForm.Select.label') }}
-      </el-col>
-    </el-row>
-    <el-row
-      style="width: 100%"
-      v-for="(option, $index) in displayedOptions"
-      :key="$index"
-      :gutter="10"
-      class="mb-8"
-    >
-      <el-col :span="10">
-        <el-input
-          v-model="formValue.option_list[$index].label"
-          :placeholder="$t('dynamicsForm.tag.placeholder')"
-        />
-      </el-col>
-      <el-col :span="12">
-        <el-input
-          v-model="formValue.option_list[$index].value"
-          :placeholder="$t('dynamicsForm.Select.label')"
-        />
-      </el-col>
-      <el-col :span="1">
-        <el-button link class="ml-8" @click.stop="delOption($index)">
-          <AppIcon iconName="app-delete"></AppIcon>
-        </el-button>
-      </el-col>
-    </el-row>
-    <div v-if="hasMoreOptions" class="load-more">
-      <el-button link type="primary" @click.stop="loadMoreOptions">
+    <OptionListEditor
+      ref="optionEditorRef"
+      :model-value="formValue.option_list"
+      :label-header="$t('dynamicsForm.tag.label')"
+      :value-header="$t('dynamicsForm.Select.label')"
+      :label-placeholder="$t('dynamicsForm.tag.placeholder')"
+      :value-placeholder="$t('dynamicsForm.Select.label')"
+      @delete="delOption"
+    />
+    <div v-if="formValue.option_list?.length > 20" class="load-more">
+      <el-button link type="primary" @click.stop="scrollOptionMore">
         点击加载更多
       </el-button>
-      <el-button link type="primary" @click.stop="expandAllOptions" class="ml-8">
+      <el-button link type="primary" @click.stop="scrollOptionAll" class="ml-8">
         点击展开全部
       </el-button>
     </div>
@@ -194,7 +146,7 @@
         :label="$t('dynamicsForm.default.show')"
       />
     </div>
-    <el-select
+    <el-select-v2
       class="m-2"
       multiple
       collapse-tags
@@ -204,14 +156,8 @@
       v-model="formValue.default_value"
       :teleported="false"
       popper-class="max-w-350"
-    >
-      <el-option
-        v-for="(option, index) in formValue.option_list"
-        :key="index"
-        :label="option.label"
-        :value="option.value"
-      />
-    </el-select>
+      :options="defaultValueOptions"
+    />
   </el-form-item>
   <input
     ref="csvInputRef"
@@ -231,6 +177,7 @@
 <script setup lang="ts">
 import { computed, onMounted, inject, watch, ref } from 'vue'
 import NodeCascader from '@/workflow/common/NodeCascader.vue'
+import OptionListEditor from './OptionListEditor.vue'
 import { t } from '@/locales'
 import { parseCsv } from '@/api/form-node'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -250,6 +197,14 @@ const assignment_method_option_list = computed(() => {
     })
   }
   return option_list
+})
+
+const defaultValueOptions = computed(() => {
+  const list = formValue.value.option_list || []
+  return list.map((option: any) => ({
+    value: option.value,
+    label: option.label,
+  }))
 })
 
 const model = computed(() => {
@@ -285,6 +240,9 @@ const default_ref_variables_value_rule = {
 }
 const addOption = () => {
   formValue.value.option_list.push({ value: '', label: '' })
+  requestAnimationFrame(() => {
+    optionEditorRef.value?.scrollToIndex(formValue.value.option_list.length - 1)
+  })
 }
 
 const delOption = (index: number) => {
@@ -300,6 +258,9 @@ const addCandidate = () => {
     formValue.value.candidate_list = []
   }
   formValue.value.candidate_list.push({ value: '', label: '' })
+  requestAnimationFrame(() => {
+    candidateEditorRef.value?.scrollToIndex(formValue.value.candidate_list.length - 1)
+  })
 }
 
 const delCandidate = (index: number) => {
@@ -318,69 +279,27 @@ const existingCandidateValues = computed(() => {
   return new Set(list.map((o: any) => o.value))
 })
 
-const optionDisplayedCount = ref(20)
-const candidateDisplayedCount = ref(20)
+const optionEditorRef = ref<InstanceType<typeof OptionListEditor>>()
+const candidateEditorRef = ref<InstanceType<typeof OptionListEditor>>()
 
-const displayedOptions = computed(() => {
-  const list = formValue.value.option_list || []
-  return list.slice(0, optionDisplayedCount.value)
-})
+const scrollOffset = ref({ options: 0, candidates: 0 })
 
-const displayedCandidates = computed(() => {
-  const list = formValue.value.candidate_list || []
-  return list.slice(0, candidateDisplayedCount.value)
-})
-
-const hasMoreOptions = computed(() => {
-  return (formValue.value.option_list?.length || 0) > optionDisplayedCount.value
-})
-
-const hasMoreCandidates = computed(() => {
-  return (formValue.value.candidate_list?.length || 0) > candidateDisplayedCount.value
-})
-
-const loadMoreOptions = () => {
-  optionDisplayedCount.value += 20
+const scrollOptionMore = () => {
+  scrollOffset.value.options += 20 * 48
+  optionEditorRef.value?.scrollToOffset(scrollOffset.value.options)
 }
 
-const loadMoreCandidates = () => {
-  candidateDisplayedCount.value += 20
+const scrollOptionAll = () => {
+  optionEditorRef.value?.scrollToBottom()
 }
 
-const expandAllOptions = async () => {
-  const total = formValue.value.option_list?.length || 0
-  if (total <= 100) {
-    optionDisplayedCount.value = total
-    return
-  }
-  try {
-    await ElMessageBox.confirm(
-      '数据量过大，全部展开可能会影响页面性能，确认是否全部展开？',
-      '提示',
-      { type: 'warning' }
-    )
-    optionDisplayedCount.value = total
-  } catch {
-    // 用户取消
-  }
+const scrollCandidateMore = () => {
+  scrollOffset.value.candidates += 20 * 48
+  candidateEditorRef.value?.scrollToOffset(scrollOffset.value.candidates)
 }
 
-const expandAllCandidates = async () => {
-  const total = formValue.value.candidate_list?.length || 0
-  if (total <= 100) {
-    candidateDisplayedCount.value = total
-    return
-  }
-  try {
-    await ElMessageBox.confirm(
-      '数据量过大，全部展开可能会影响页面性能，确认是否全部展开？',
-      '提示',
-      { type: 'warning' }
-    )
-    candidateDisplayedCount.value = total
-  } catch {
-    // 用户取消
-  }
+const scrollCandidateAll = () => {
+  candidateEditorRef.value?.scrollToBottom()
 }
 
 const importCsv = () => {
