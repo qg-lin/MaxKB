@@ -131,6 +131,14 @@ return {
 }
 ```
 
+**`form_data` 初始值补充**（在现有初始化对象中加入）：
+```typescript
+const form_data = ref<any>({
+  // ... 现有 ...
+  hide_when_no_value: undefined, // 三态：true / false / undefined（回退到表单级）
+})
+```
+
 **`rander()` 解析**：
 ```typescript
 form_data.value.hide_when_no_value = data.hide_when_no_value ?? undefined
