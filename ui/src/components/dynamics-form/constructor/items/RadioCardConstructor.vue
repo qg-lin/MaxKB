@@ -21,7 +21,7 @@
             {<br />
             "label": "xx",<br />
             "value": "xx",<br />
-            "default": false<br />
+            "default":false<br />
             }<br />
             ]<br />
             label: {{ $t('dynamicsForm.AssignmentMethod.ref_variables.popover_label') }}
@@ -72,47 +72,15 @@
       </div>
     </template>
 
-    <el-row style="width: 100%" :gutter="10">
-      <el-col :span="10">
-        {{ $t('dynamicsForm.tag.label') }}
-      </el-col>
-      <el-col :span="12">
-        {{ $t('dynamicsForm.Select.label') }}
-      </el-col>
-    </el-row>
-    <el-row
-      style="width: 100%"
-      v-for="(option, $index) in displayedCandidates"
-      :key="$index"
-      :gutter="10"
-      class="mb-8"
-    >
-      <el-col :span="10">
-        <el-input
-          v-model="formValue.candidate_list[$index].label"
-          :placeholder="$t('dynamicsForm.tag.placeholder')"
-        />
-      </el-col>
-      <el-col :span="12">
-        <el-input
-          v-model="formValue.candidate_list[$index].value"
-          :placeholder="$t('dynamicsForm.Select.label')"
-        />
-      </el-col>
-      <el-col :span="1">
-        <el-button link class="ml-8" @click.stop="delCandidate($index)">
-          <AppIcon iconName="app-delete"></AppIcon>
-        </el-button>
-      </el-col>
-    </el-row>
-    <div v-if="hasMoreCandidates" class="load-more">
-      <el-button link type="primary" @click.stop="loadMoreCandidates">
-        点击加载更多
-      </el-button>
-      <el-button link type="primary" @click.stop="expandAllCandidates" class="ml-8">
-        点击展开全部
-      </el-button>
-    </div>
+    <OptionListEditor
+      ref="candidateEditorRef"
+      :model-value="formValue.candidate_list"
+      :label-header="$t('dynamicsForm.tag.label')"
+      :value-header="$t('dynamicsForm.Select.label')"
+      :label-placeholder="$t('dynamicsForm.tag.placeholder')"
+      :value-placeholder="$t('dynamicsForm.Select.label')"
+      @delete="delCandidate"
+    />
   </el-form-item>
   <el-form-item v-if="formValue.assignment_method === 'custom'">
     <template #label>
@@ -129,49 +97,16 @@
       </div>
     </template>
 
-    <el-row style="width: 100%" :gutter="10">
-      <el-col :span="10">
-        {{ $t('dynamicsForm.tag.label') }}
-      </el-col>
-      <el-col :span="12">
-        {{ $t('dynamicsForm.Select.label') }}
-      </el-col>
-    </el-row>
-    <el-row
-      style="width: 100%"
-      v-for="(option, $index) in displayedOptions"
-      :key="$index"
-      :gutter="10"
-      class="mb-8"
-    >
-      <el-col :span="10">
-        <el-input
-          v-model="formValue.option_list[$index].label"
-          :placeholder="$t('dynamicsForm.tag.placeholder')"
-        />
-      </el-col>
-      <el-col :span="12">
-        <el-input
-          v-model="formValue.option_list[$index].value"
-          :placeholder="$t('dynamicsForm.Select.label')"
-        />
-      </el-col>
-      <el-col :span="1">
-        <el-button link class="ml-8" @click.stop="delOption($index)">
-          <AppIcon iconName="app-delete"></AppIcon>
-        </el-button>
-      </el-col>
-    </el-row>
-    <div v-if="hasMoreOptions" class="load-more">
-      <el-button link type="primary" @click.stop="loadMoreOptions">
-        点击加载更多
-      </el-button>
-      <el-button link type="primary" @click.stop="expandAllOptions" class="ml-8">
-        点击展开全部
-      </el-button>
-    </div>
+    <OptionListEditor
+      ref="optionEditorRef"
+      :model-value="formValue.option_list"
+      :label-header="$t('dynamicsForm.tag.label')"
+      :value-header="$t('dynamicsForm.Select.label')"
+      :label-placeholder="$t('dynamicsForm.tag.placeholder')"
+      :value-placeholder="$t('dynamicsForm.Select.label')"
+      @delete="delOption"
+    />
   </el-form-item>
-
   <el-form-item
     v-if="formValue.assignment_method === 'custom'"
     class="defaultValueItem"
@@ -219,13 +154,15 @@
   />
 </template>
 <script setup lang="ts">
-import { computed, onMounted, inject, ref } from 'vue'
+import { computed, onMounted, inject, ref, watch } from 'vue'
 import RadioCard from '@/components/dynamics-form/items/radio/RadioCard.vue'
 import NodeCascader from '@/workflow/common/NodeCascader.vue'
+import OptionListEditor from './OptionListEditor.vue'
 import { t } from '@/locales'
 import { parseCsv } from '@/api/form-node'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 const getModel = inject('getModel') as any
+const loadCandidates = inject('loadCandidates') as any
 
 const assignment_method_option_list = computed(() => {
   const option_list = [
@@ -277,6 +214,9 @@ const default_ref_variables_value_rule = {
 }
 const addOption = () => {
   formValue.value.option_list.push({ value: '', label: '' })
+  requestAnimationFrame(() => {
+    optionEditorRef.value?.scrollToIndex(formValue.value.option_list.length - 1)
+  })
 }
 
 const delOption = (index: number) => {
@@ -292,6 +232,9 @@ const addCandidate = () => {
     formValue.value.candidate_list = []
   }
   formValue.value.candidate_list.push({ value: '', label: '' })
+  requestAnimationFrame(() => {
+    candidateEditorRef.value?.scrollToIndex(formValue.value.candidate_list.length - 1)
+  })
 }
 
 const delCandidate = (index: number) => {
@@ -310,70 +253,8 @@ const existingCandidateValues = computed(() => {
   return new Set(list.map((o: any) => o.value))
 })
 
-const optionDisplayedCount = ref(20)
-const candidateDisplayedCount = ref(20)
-
-const displayedOptions = computed(() => {
-  const list = formValue.value.option_list || []
-  return list.slice(0, optionDisplayedCount.value)
-})
-
-const displayedCandidates = computed(() => {
-  const list = formValue.value.candidate_list || []
-  return list.slice(0, candidateDisplayedCount.value)
-})
-
-const hasMoreOptions = computed(() => {
-  return (formValue.value.option_list?.length || 0) > optionDisplayedCount.value
-})
-
-const hasMoreCandidates = computed(() => {
-  return (formValue.value.candidate_list?.length || 0) > candidateDisplayedCount.value
-})
-
-const loadMoreOptions = () => {
-  optionDisplayedCount.value += 20
-}
-
-const loadMoreCandidates = () => {
-  candidateDisplayedCount.value += 20
-}
-
-const expandAllOptions = async () => {
-  const total = formValue.value.option_list?.length || 0
-  if (total <= 100) {
-    optionDisplayedCount.value = total
-    return
-  }
-  try {
-    await ElMessageBox.confirm(
-      '数据量过大，全部展开可能会影响页面性能，确认是否全部展开？',
-      '提示',
-      { type: 'warning' }
-    )
-    optionDisplayedCount.value = total
-  } catch {
-    // 用户取消
-  }
-}
-
-const expandAllCandidates = async () => {
-  const total = formValue.value.candidate_list?.length || 0
-  if (total <= 100) {
-    candidateDisplayedCount.value = total
-    return
-  }
-  try {
-    await ElMessageBox.confirm(
-      '数据量过大，全部展开可能会影响页面性能，确认是否全部展开？',
-      '提示',
-      { type: 'warning' }
-    )
-    candidateDisplayedCount.value = total
-  } catch {
-    // 用户取消
-  }
-}
+const optionEditorRef = ref<InstanceType<typeof OptionListEditor>>()
+const candidateEditorRef = ref<InstanceType<typeof OptionListEditor>>()
 
 const importCsv = () => {
   csvInputRef.value?.click()
@@ -445,6 +326,29 @@ const rander = (form_data: any) => {
   formValue.value.assignment_method = form_data.assignment_method || 'custom'
   formValue.value.ref_variables_mode = form_data.ref_variables_mode || 'only'
   formValue.value.candidate_list = form_data.candidate_list || []
+  formValue.value.candidate_count = form_data.candidate_count ?? form_data.candidate_list?.length ?? 0
+  maybeLoadCandidates()
+}
+
+const maybeLoadCandidates = async () => {
+  if (
+    !loadCandidates ||
+    formValue.value.assignment_method !== 'ref_variables' ||
+    formValue.value.ref_variables_mode !== 'with_candidates' ||
+    !formValue.value.field ||
+    (formValue.value.candidate_list && formValue.value.candidate_list.length > 0) ||
+    !(formValue.value.candidate_count > 0)
+  ) {
+    return
+  }
+  try {
+    const res = await loadCandidates(formValue.value.field)
+    if (res?.candidate_list && (!formValue.value.candidate_list || formValue.value.candidate_list.length === 0)) {
+      formValue.value.candidate_list = res.candidate_list
+    }
+  } catch (e) {
+    // 静默失败
+  }
 }
 
 defineExpose({ getData, rander })
@@ -454,11 +358,17 @@ onMounted(() => {
   formValue.value.assignment_method = 'custom'
   formValue.value.ref_variables_mode = 'only'
   formValue.value.candidate_list = []
+  formValue.value.candidate_count = 0
   if (formValue.value.show_default_value === undefined) {
     formValue.value.show_default_value = true
   }
   addOption()
 })
+
+watch(
+  () => [formValue.value.assignment_method, formValue.value.ref_variables_mode],
+  () => maybeLoadCandidates(),
+)
 </script>
 <style lang="scss" scoped>
 .defaultValueItem {
