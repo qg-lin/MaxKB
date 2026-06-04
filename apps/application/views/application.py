@@ -35,6 +35,66 @@ def get_application_operation_object(application_id):
     return {}
 
 
+def _iter_form_field_nodes(workflow):
+    """递归产出 workflow 中所有 form-node 的 (node, node_data) 配对"""
+    if not isinstance(workflow, dict):
+        return
+    nodes = workflow.get('nodes') or []
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        node_data = node.get('properties', {}).get('node_data')
+        if isinstance(node_data, dict) and node.get('type') == 'form-node':
+            yield node, node_data
+        # 嵌套循环体内的子工作流
+        loop_body = node.get('properties', {}).get('node_data', {}).get('loop_body') if isinstance(node, dict) else None
+        if loop_body:
+            yield from _iter_form_field_nodes(loop_body)
+
+
+def _iter_user_input_field_nodes(workflow):
+    """递归产出所有含 user_input_field_list 的节点 (node, node_data, field_list_attr) 配对"""
+    if not isinstance(workflow, dict):
+        return
+    nodes = workflow.get('nodes') or []
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        node_data = node.get('properties', {}).get('node_data') or {}
+        if isinstance(node_data, dict) and 'user_input_field_list' in node_data:
+            yield node, node_data, 'user_input_field_list'
+        if isinstance(node_data, dict) and 'api_input_field_list' in node_data:
+            yield node, node_data, 'api_input_field_list'
+        loop_body = node_data.get('loop_body') if isinstance(node_data, dict) else None
+        if loop_body:
+            yield from _iter_user_input_field_nodes(loop_body)
+
+
+def _strip_candidate_list(field):
+    candidate_list = field.get('candidate_list')
+    if isinstance(candidate_list, list):
+        field['candidate_count'] = len(candidate_list)
+        field['candidate_list'] = []
+    else:
+        field['candidate_count'] = 0
+        field['candidate_list'] = []
+
+
+def _strip_form_field_candidates(application_dict, include):
+    """当 include=False 时，将 form_field / user_input_field 候选值置空并写入 candidate_count"""
+    if include:
+        return
+    work_flow = application_dict.get('work_flow') if isinstance(application_dict, dict) else None
+    if not work_flow:
+        return
+    for _node, node_data in _iter_form_field_nodes(work_flow):
+        for field in node_data.get('form_field_list') or []:
+            _strip_candidate_list(field)
+    for _node, node_data, attr in _iter_user_input_field_nodes(work_flow):
+        for field in node_data.get(attr) or []:
+            _strip_candidate_list(field)
+
+
 class ApplicationAPI(APIView):
     authentication_classes = [TokenAuth]
 
@@ -221,9 +281,63 @@ class ApplicationAPI(APIView):
                                         CompareConstants.AND),
                          RoleConstants.WORKSPACE_MANAGE.get_workspace_role())
         def get(self, request: Request, workspace_id: str, application_id: str):
-            return result.success(ApplicationOperateSerializer(
+            include = str(request.query_params.get('include_form_field_candidates', 'false')).lower() in (
+                '1', 'true', 'yes')
+            application_dict = ApplicationOperateSerializer(
                 data={'application_id': application_id, 'user_id': request.user.id,
-                      'workspace_id': workspace_id, }).one())
+                      'workspace_id': workspace_id, }).one()
+            _strip_form_field_candidates(application_dict, include)
+            return result.success(application_dict)
+
+    class FormFieldCandidates(APIView):
+        """懒加载表单字段候选值：编辑器在 with_candidates 模式下首次打开时按需拉取单字段全量候选值"""
+
+        authentication_classes = [TokenAuth]
+
+        @extend_schema(
+            methods=['GET'],
+            description=_('Get form field candidates for lazy load'),
+            summary=_('Get form field candidates'),
+            tags=[_('Application')]  # type: ignore
+        )
+        @has_permissions(PermissionConstants.APPLICATION_READ.get_workspace_application_permission(),
+                         PermissionConstants.APPLICATION_READ.get_workspace_permission_workspace_manage_role(),
+                         ViewPermission([RoleConstants.USER.get_workspace_role()],
+                                        [PermissionConstants.APPLICATION.get_workspace_application_permission()],
+                                        CompareConstants.AND),
+                         RoleConstants.WORKSPACE_MANAGE.get_workspace_role())
+        def get(self, request: Request, workspace_id: str, application_id: str):
+            node_id = request.query_params.get('node_id')
+            field_id = request.query_params.get('field_id')
+            if not node_id or not field_id:
+                return result.success({'candidate_list': [], 'candidate_count': 0})
+
+            application = QuerySet(Application).filter(id=application_id).first()
+            if application is None:
+                return result.success({'candidate_list': [], 'candidate_count': 0})
+
+            work_flow = application.work_flow or {}
+            for node, node_data in _iter_form_field_nodes(work_flow):
+                if str(node.get('id') or '') != str(node_id):
+                    continue
+                for field in node_data.get('form_field_list') or []:
+                    if field.get('field') == field_id:
+                        candidate_list = field.get('candidate_list') or []
+                        return result.success({
+                            'candidate_list': candidate_list,
+                            'candidate_count': len(candidate_list) if isinstance(candidate_list, list) else 0,
+                        })
+            for node, node_data, attr in _iter_user_input_field_nodes(work_flow):
+                if str(node.get('id') or '') != str(node_id):
+                    continue
+                for field in node_data.get(attr) or []:
+                    if field.get('field') == field_id:
+                        candidate_list = field.get('candidate_list') or []
+                        return result.success({
+                            'candidate_list': candidate_list,
+                            'candidate_count': len(candidate_list) if isinstance(candidate_list, list) else 0,
+                        })
+            return result.success({'candidate_list': [], 'candidate_count': 0})
 
     class Publish(APIView):
         authentication_classes = [TokenAuth]

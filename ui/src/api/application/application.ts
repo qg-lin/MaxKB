@@ -80,12 +80,43 @@ const delApplication: (
  * 应用详情
  * @param application_id
  * @param loading
+ * 注意：详情接口默认不返回 form_field 候选值（避免 5 万条数据导致首屏卡顿），后端仅返 candidate_count。
+ * 候选值由前端构造函数在 with_candidates 模式下通过 getFormFieldCandidates 按字段懒加载。
  */
 const getApplicationDetail: (
   application_id: string,
   loading?: Ref<boolean>,
 ) => Promise<Result<any>> = (application_id, loading) => {
-  return get(`${prefix.value}/${application_id}`, undefined, loading)
+  return get(
+    `${prefix.value}/${application_id}`,
+    { include_form_field_candidates: false },
+    loading,
+  )
+}
+
+/**
+ * 获取表单节点字段的完整候选值
+ * @param application_id 应用 id
+ * @param node_id 表单节点 id
+ * @param field_id 字段 id
+ * @param loading
+ */
+const getFormFieldCandidates: (
+  application_id: string,
+  node_id: string,
+  field_id: string,
+  loading?: Ref<boolean>,
+) => Promise<Result<{ candidate_list: any[]; candidate_count: number }>> = (
+  application_id,
+  node_id,
+  field_id,
+  loading,
+) => {
+  return get(
+    `${prefix.value}/${application_id}/form_field_candidates`,
+    { node_id, field_id },
+    loading,
+  )
 }
 
 /**
@@ -412,6 +443,7 @@ export default {
   putApplication,
   delApplication,
   getApplicationDetail,
+  getFormFieldCandidates,
   getAccessToken,
   putAccessToken,
   putXpackAccessToken,
