@@ -1,5 +1,5 @@
 <template>
-  <el-select
+  <el-select-v2
     class="m-2"
     multiple
     filterable
@@ -9,15 +9,8 @@
     :reserve-keyword="false"
     v-bind="$attrs"
     v-model="_modelValue"
-  >
-    <el-option
-      v-for="(item, index) in option_list"
-      :key="index"
-      :label="label(item)"
-      :value="item[valueField]"
-    >
-    </el-option>
-  </el-select>
+    :options="options"
+  />
 </template>
 <script setup lang="ts">
 import type { FormField } from '@/components/dynamics-form/type'
@@ -60,8 +53,11 @@ const option_list = computed(() => {
   return props.formField.option_list ? props.formField.option_list : []
 })
 
-const label = (option: any) => {
-  return option[textField.value]
-}
+const options = computed(() => {
+  return option_list.value.map((item: any) => ({
+    value: item[valueField.value],
+    label: item[textField.value],
+  }))
+})
 </script>
 <style lang="scss"></style>
