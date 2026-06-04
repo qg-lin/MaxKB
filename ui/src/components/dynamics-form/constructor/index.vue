@@ -184,6 +184,12 @@ const rander = (data: any) => {
   if (data.input_type) {
     form_data.value.input_type = data.input_type + 'Constructor'
   }
+  if (data.default_value !== undefined) {
+    form_data.value.default_value = data.default_value
+  }
+  if (data.default_value_assignment_method !== undefined) {
+    form_data.value.default_value_assignment_method = data.default_value_assignment_method
+  }
 
   if (data.label && data.label.input_type === 'TooltipLabel') {
     form_data.value.tooltip = data.label.attrs.tooltip

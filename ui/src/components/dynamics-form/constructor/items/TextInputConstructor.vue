@@ -247,8 +247,10 @@ defineExpose({ getData, rander })
 onMounted(() => {
   formValue.value.minlength = 0
   formValue.value.maxlength = 200
-  formValue.value.default_value = ''
-  formValue.value.default_value_assignment_method = 'custom'
+  if (formValue.value.default_value_assignment_method === undefined) {
+    formValue.value.default_value_assignment_method = 'custom'
+    formValue.value.default_value = ''
+  }
   if (formValue.value.show_default_value === undefined) {
     formValue.value.show_default_value = true
   }
