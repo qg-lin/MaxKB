@@ -161,13 +161,33 @@ import AddFormCollect from '@/workflow/common/AddFormCollect.vue'
 import EditFormCollect from '@/workflow/common/EditFormCollect.vue'
 import { type FormInstance } from 'element-plus'
 import { ref, onMounted, computed, provide, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { input_type_list } from '@/components/dynamics-form/constructor/data'
 import { MsgError } from '@/utils/message'
 import { set, cloneDeep } from 'lodash'
 import Sortable from 'sortablejs'
 import { t } from '@/locales'
+import applicationApi from '@/api/application/application'
+
 const props = defineProps<{ nodeModel: any }>()
+const route = useRoute()
+const applicationId = computed(() => (route.params as any).id)
+
 provide('getModel', () => props.nodeModel)
+// 提供候选值懒加载函数：构造函数在 with_candidates 模式下，候选值被后端过滤时调用
+provide('loadCandidates', async (fieldId: string) => {
+  if (!applicationId.value || !props.nodeModel?.id || !fieldId) return null
+  try {
+    const res = await applicationApi.getFormFieldCandidates(
+      applicationId.value,
+      props.nodeModel.id,
+      fieldId,
+    )
+    return res.data
+  } catch (e) {
+    return null
+  }
+})
 const formNodeFormRef = ref<FormInstance>()
 const tableRef = ref()
 const editFormField = (form_field_data: any, field_index: number) => {

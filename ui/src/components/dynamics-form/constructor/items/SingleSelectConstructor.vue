@@ -160,6 +160,7 @@ import { t } from '@/locales'
 import { parseCsv } from '@/api/form-node'
 import { ElMessage, ElMessageBox } from 'element-plus'
 const getModel = inject('getModel') as any
+const loadCandidates = inject('loadCandidates') as any
 
 const assignment_method_option_list = computed(() => {
   const option_list = [
@@ -331,6 +332,31 @@ const rander = (form_data: any) => {
   formValue.value.assignment_method = form_data.assignment_method || 'custom'
   formValue.value.ref_variables_mode = form_data.ref_variables_mode || 'only'
   formValue.value.candidate_list = form_data.candidate_list || []
+  formValue.value.candidate_count = form_data.candidate_count ?? form_data.candidate_list?.length ?? 0
+  maybeLoadCandidates()
+}
+
+// 懒加载候选值：后端详情接口默认不返 candidate_list，仅返 candidate_count。
+// 编辑器渲染时若处于 with_candidates 模式且 candidate_list 为空但 count>0，触发懒加载。
+const maybeLoadCandidates = async () => {
+  if (
+    !loadCandidates ||
+    formValue.value.assignment_method !== 'ref_variables' ||
+    formValue.value.ref_variables_mode !== 'with_candidates' ||
+    !formValue.value.field ||
+    (formValue.value.candidate_list && formValue.value.candidate_list.length > 0) ||
+    !(formValue.value.candidate_count > 0)
+  ) {
+    return
+  }
+  try {
+    const res = await loadCandidates(formValue.value.field)
+    if (res?.candidate_list && (!formValue.value.candidate_list || formValue.value.candidate_list.length === 0)) {
+      formValue.value.candidate_list = res.candidate_list
+    }
+  } catch (e) {
+    // 静默失败，用户在编辑器中可继续手动添加
+  }
 }
 
 defineExpose({ getData, rander })
@@ -340,11 +366,18 @@ onMounted(() => {
   formValue.value.assignment_method = 'custom'
   formValue.value.ref_variables_mode = 'only'
   formValue.value.candidate_list = []
+  formValue.value.candidate_count = 0
   if (formValue.value.show_default_value === undefined) {
     formValue.value.show_default_value = true
   }
   addOption()
 })
+
+// 模式切换到 with_candidates 时尝试懒加载
+watch(
+  () => [formValue.value.assignment_method, formValue.value.ref_variables_mode],
+  () => maybeLoadCandidates(),
+)
 </script>
 <style lang="scss" scoped>
 .defaultValueItem {

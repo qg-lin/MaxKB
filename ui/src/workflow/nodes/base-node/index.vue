@@ -168,7 +168,7 @@
 import { groupBy, set } from 'lodash'
 import NodeContainer from '@/workflow/common/NodeContainer.vue'
 import type { FormInstance } from 'element-plus'
-import { ref, computed, onMounted, nextTick, inject } from 'vue'
+import { ref, computed, onMounted, nextTick, inject, provide } from 'vue'
 import { MsgError, MsgSuccess, MsgWarning } from '@/utils/message'
 import { t } from '@/locales'
 import TTSModeParamSettingDialog from '@/views/application/component/TTSModeParamSettingDialog.vue'
@@ -178,8 +178,26 @@ import FileUploadSettingDialog from '@/workflow/nodes/base-node/component/FileUp
 import ChatFieldTable from './component/ChatFieldTable.vue'
 import { useRoute } from 'vue-router'
 import { loadSharedApi } from '@/utils/dynamics-api/shared-api'
+import applicationApi from '@/api/application/application'
 const getResourceDetail = inject('getResourceDetail') as any
 const route = useRoute()
+const applicationId = computed(() => (route.params as any).id)
+// 提供 getModel（让构造函数能拿到当前节点以供 NodeCascader 使用）
+provide('getModel', () => props.nodeModel)
+// 提供候选值懒加载函数
+provide('loadCandidates', async (fieldId: string) => {
+  if (!applicationId.value || !props.nodeModel?.id || !fieldId) return null
+  try {
+    const res = await applicationApi.getFormFieldCandidates(
+      applicationId.value,
+      props.nodeModel.id,
+      fieldId,
+    )
+    return res.data
+  } catch (e) {
+    return null
+  }
+})
 
 const {
   params: { id },
