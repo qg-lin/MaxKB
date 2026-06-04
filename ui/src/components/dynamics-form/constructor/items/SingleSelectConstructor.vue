@@ -80,14 +80,6 @@
       :value-placeholder="$t('dynamicsForm.Select.label')"
       @delete="delCandidate"
     />
-    <div v-if="formValue.candidate_list?.length > 20" class="load-more">
-      <el-button link type="primary" @click.stop="scrollCandidateMore">
-        点击加载更多
-      </el-button>
-      <el-button link type="primary" @click.stop="scrollCandidateAll" class="ml-8">
-        点击展开全部
-      </el-button>
-    </div>
   </el-form-item>
   <el-form-item v-if="formValue.assignment_method == 'custom'">
     <template #label>
@@ -113,14 +105,6 @@
       :value-placeholder="$t('dynamicsForm.Select.label')"
       @delete="delOption"
     />
-    <div v-if="formValue.option_list?.length > 20" class="load-more">
-      <el-button link type="primary" @click.stop="scrollOptionMore">
-        点击加载更多
-      </el-button>
-      <el-button link type="primary" @click.stop="scrollOptionAll" class="ml-8">
-        点击展开全部
-      </el-button>
-    </div>
   </el-form-item>
   <el-form-item
     v-if="formValue.assignment_method == 'custom'"
@@ -277,26 +261,6 @@ const existingCandidateValues = computed(() => {
   const list = formValue.value.candidate_list || []
   return new Set(list.map((o: any) => o.value))
 })
-
-const scrollOffset = ref({ options: 0, candidates: 0 })
-
-const scrollOptionMore = () => {
-  scrollOffset.value.options += 20 * 48
-  optionEditorRef.value?.scrollToOffset(scrollOffset.value.options)
-}
-
-const scrollOptionAll = () => {
-  optionEditorRef.value?.scrollToBottom()
-}
-
-const scrollCandidateMore = () => {
-  scrollOffset.value.candidates += 20 * 48
-  candidateEditorRef.value?.scrollToOffset(scrollOffset.value.candidates)
-}
-
-const scrollCandidateAll = () => {
-  candidateEditorRef.value?.scrollToBottom()
-}
 
 const importCsv = () => {
   csvInputRef.value?.click()
