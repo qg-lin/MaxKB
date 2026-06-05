@@ -957,6 +957,50 @@ class ApplicationOperateSerializer(serializers.Serializer):
                                        not view_knowledge_id_list.__contains__(knowledge_id)]
             node_data['knowledge_id_list'] = other_knowledge_id_list + knowledge_id_list
 
+    @staticmethod
+    def _restore_candidate_list(new_workflow, old_workflow):
+        """将数据库中已有的 candidate_list 回填到前端传来但为空的字段中。
+
+        前端保存时，详情接口已将 candidate_list 置空并写入 candidate_count，
+        对于前端未编辑过的字段，需要从数据库原始数据中恢复 candidate_list。
+        """
+        if not isinstance(new_workflow, dict) or not isinstance(old_workflow, dict):
+            return
+
+        def _iter_fields(wf):
+            if not isinstance(wf, dict):
+                return
+            for node in wf.get('nodes') or []:
+                if not isinstance(node, dict):
+                    continue
+                node_data = node.get('properties', {}).get('node_data')
+                if isinstance(node_data, dict) and node.get('type') == 'form-node':
+                    for field in node_data.get('form_field_list') or []:
+                        yield node.get('id'), field
+                if isinstance(node_data, dict):
+                    for attr in ('user_input_field_list', 'api_input_field_list'):
+                        for field in node_data.get(attr) or []:
+                            yield node.get('id'), field
+                    loop_body = node_data.get('loop_body')
+                    if loop_body:
+                        yield from _iter_fields(loop_body)
+
+        # 建立旧数据索引: (node_id, field) -> candidate_list
+        old_index = {}
+        for node_id, field in _iter_fields(old_workflow):
+            cl = field.get('candidate_list')
+            if node_id and isinstance(cl, list) and len(cl) > 0:
+                old_index[(node_id, field.get('field'))] = cl
+
+        # 回填：新数据中 candidate_list 为空但数据库有值时，恢复原始数据
+        for node_id, field in _iter_fields(new_workflow):
+            old_cl = old_index.get((node_id, field.get('field')))
+            if old_cl is None:
+                continue
+            new_cl = field.get('candidate_list')
+            if (not isinstance(new_cl, list) or len(new_cl) == 0) and field.get('candidate_count', 0) > 0:
+                field['candidate_list'] = old_cl
+
     @transaction.atomic
     def edit(self, instance: Dict, with_valid=True):
         if with_valid:
@@ -994,6 +1038,8 @@ class ApplicationOperateSerializer(serializers.Serializer):
         if 'work_flow' in instance:
             # 修改语音配置相关
             self.update_work_flow_model(instance)
+            # 恢复数据库中已有的 candidate_list（前端详情接口已置空）
+            self._restore_candidate_list(instance['work_flow'], application.work_flow or {})
         update_keys = ['name', 'desc', 'model_id', 'multiple_rounds_dialogue', 'prologue', 'status',
                        'knowledge_setting', 'model_setting', 'problem_optimization', 'dialogue_number',
                        'stt_model_id', 'tts_model_id', 'tts_model_enable', 'stt_model_enable', 'tts_type',
