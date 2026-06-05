@@ -81,14 +81,6 @@
       :value-placeholder="$t('dynamicsForm.Select.label')"
       @delete="delCandidate"
     />
-    <div v-if="formValue.candidate_list?.length > 20" class="load-more">
-      <el-button link type="primary" @click.stop="scrollCandidateMore">
-        点击加载更多
-      </el-button>
-      <el-button link type="primary" @click.stop="scrollCandidateAll" class="ml-8">
-        点击展开全部
-      </el-button>
-    </div>
   </el-form-item>
   <el-form-item v-if="formValue.assignment_method == 'custom'">
     <template #label>
@@ -114,14 +106,6 @@
       :value-placeholder="$t('dynamicsForm.Select.label')"
       @delete="delOption"
     />
-    <div v-if="formValue.option_list?.length > 20" class="load-more">
-      <el-button link type="primary" @click.stop="scrollOptionMore">
-        点击加载更多
-      </el-button>
-      <el-button link type="primary" @click.stop="scrollOptionAll" class="ml-8">
-        点击展开全部
-      </el-button>
-    </div>
   </el-form-item>
   <el-form-item
     v-if="formValue.assignment_method == 'custom'"
@@ -170,7 +154,7 @@
   />
 </template>
 <script setup lang="ts">
-import { computed, onMounted, inject, ref } from 'vue'
+import { computed, onMounted, inject, ref, watch } from 'vue'
 import RadioRow from '@/components/dynamics-form/items/radio/RadioRow.vue'
 import NodeCascader from '@/workflow/common/NodeCascader.vue'
 import OptionListEditor from './OptionListEditor.vue'
@@ -179,6 +163,7 @@ import { t } from '@/locales'
 import { parseCsv } from '@/api/form-node'
 import { ElMessage, ElMessageBox } from 'element-plus'
 const getModel = inject('getModel') as any
+const loadCandidates = inject('loadCandidates') as any
 
 const assignment_method_option_list = computed(() => {
   const option_list = [
@@ -273,26 +258,6 @@ const existingCandidateValues = computed(() => {
 const optionEditorRef = ref<InstanceType<typeof OptionListEditor>>()
 const candidateEditorRef = ref<InstanceType<typeof OptionListEditor>>()
 
-const scrollOffset = ref({ options: 0, candidates: 0 })
-
-const scrollOptionMore = () => {
-  scrollOffset.value.options += 20 * 48
-  optionEditorRef.value?.scrollToOffset(scrollOffset.value.options)
-}
-
-const scrollOptionAll = () => {
-  optionEditorRef.value?.scrollToBottom()
-}
-
-const scrollCandidateMore = () => {
-  scrollOffset.value.candidates += 20 * 48
-  candidateEditorRef.value?.scrollToOffset(scrollOffset.value.candidates)
-}
-
-const scrollCandidateAll = () => {
-  candidateEditorRef.value?.scrollToBottom()
-}
-
 const importCsv = () => {
   csvInputRef.value?.click()
 }
@@ -362,6 +327,29 @@ const rander = (form_data: any) => {
   formValue.value.assignment_method = form_data.assignment_method || 'custom'
   formValue.value.ref_variables_mode = form_data.ref_variables_mode || 'only'
   formValue.value.candidate_list = form_data.candidate_list || []
+  formValue.value.candidate_count = form_data.candidate_count ?? form_data.candidate_list?.length ?? 0
+  maybeLoadCandidates()
+}
+
+const maybeLoadCandidates = async () => {
+  if (
+    !loadCandidates ||
+    formValue.value.assignment_method !== 'ref_variables' ||
+    formValue.value.ref_variables_mode !== 'with_candidates' ||
+    !formValue.value.field ||
+    (formValue.value.candidate_list && formValue.value.candidate_list.length > 0) ||
+    !(formValue.value.candidate_count > 0)
+  ) {
+    return
+  }
+  try {
+    const res = await loadCandidates(formValue.value.field)
+    if (res?.candidate_list && (!formValue.value.candidate_list || formValue.value.candidate_list.length === 0)) {
+      formValue.value.candidate_list = res.candidate_list
+    }
+  } catch (e) {
+    // 静默失败
+  }
 }
 
 defineExpose({ getData, rander })
@@ -371,11 +359,17 @@ onMounted(() => {
   formValue.value.assignment_method = 'custom'
   formValue.value.ref_variables_mode = 'only'
   formValue.value.candidate_list = []
+  formValue.value.candidate_count = 0
   if (formValue.value.show_default_value === undefined) {
     formValue.value.show_default_value = true
   }
   addOption()
 })
+
+watch(
+  () => [formValue.value.assignment_method, formValue.value.ref_variables_mode],
+  () => maybeLoadCandidates(),
+)
 </script>
 <style lang="scss" scoped>
 .defaultValueItem {

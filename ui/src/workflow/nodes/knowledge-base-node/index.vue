@@ -34,15 +34,33 @@
 </template>
 <script setup lang="ts">
 import NodeContainer from '@/workflow/common/NodeContainer.vue'
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, provide } from 'vue'
+import { useRoute } from 'vue-router'
 import { copyClick } from '@/utils/clipboard'
 import { set } from 'lodash'
 
 import UserInputFieldTable from './component/UserInputFieldTable.vue'
+import applicationApi from '@/api/application/application'
 const showicon = ref<number | null>(null)
 const getResourceDetail = inject('getResourceDetail') as any
+const route = useRoute()
+const applicationId = computed(() => (route.params as any).id)
 
 const props = defineProps<{ nodeModel: any }>()
+provide('getModel', () => props.nodeModel)
+provide('loadCandidates', async (fieldId: string) => {
+  if (!applicationId.value || !props.nodeModel?.id || !fieldId) return null
+  try {
+    const res = await applicationApi.getFormFieldCandidates(
+      applicationId.value,
+      props.nodeModel.id,
+      fieldId,
+    )
+    return res.data
+  } catch (e) {
+    return null
+  }
+})
 
 const UserInputFieldTableFef = ref()
 const default_fields = [

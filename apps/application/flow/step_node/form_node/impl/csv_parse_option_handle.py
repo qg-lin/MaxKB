@@ -5,42 +5,60 @@
 """
 import csv
 import io
-import traceback
 
 from charset_normalizer import detect
 from common.utils.logger import maxkb_logger
 
 
 class CsvParseOptionHandle:
+    # 按真实使用频率排序：现代系统默认 UTF-8；中国 Windows 常用 GBK/GB18030
+    ENCODING_CANDIDATES = ('utf-8-sig', 'utf-8', 'gb18030', 'gbk')
+
     def support(self, file):
         file_name: str = file.name.lower()
         if file_name.endswith(".csv"):
             return True
         return False
 
-    def parse(self, file) -> list:
+    @classmethod
+    def parse(cls, file) -> list:
         buffer = file.read()
-        encoding = 'utf-8'
-        try:
-            detected = detect(buffer)
-            encoding = detected['encoding'] or 'utf-8'
-        except Exception as e:
-            maxkb_logger.error(f"Error detecting encoding: {e}")
-            encoding = 'utf-8'
+        if not buffer:
+            raise Exception("CSV文件为空")
 
-        try:
-            reader = csv.reader(io.TextIOWrapper(io.BytesIO(buffer), encoding=encoding))
-            rows = list(reader)
-        except Exception as e:
-            maxkb_logger.error(f"Error parsing CSV: {e}, {traceback.format_exc()}")
-            raise Exception(f"CSV解析失败：{str(e)}")
+        # 先按业务最常见的编码顺序试一遍
+        rows = None
+        for encoding in cls.ENCODING_CANDIDATES:
+            try:
+                reader = csv.reader(io.TextIOWrapper(io.BytesIO(buffer), encoding=encoding))
+                rows = list(reader)
+                break
+            except (UnicodeDecodeError, csv.Error, LookupError):
+                continue
+
+        # 常见编码都失败，再用 charset_normalizer 兜底（极少数非中文/非 UTF-8 场景）
+        if rows is None:
+            try:
+                detected = detect(buffer)
+                if isinstance(detected, dict):
+                    enc = detected.get('encoding')
+                    if enc:
+                        try:
+                            reader = csv.reader(io.TextIOWrapper(io.BytesIO(buffer), encoding=enc))
+                            rows = list(reader)
+                        except (UnicodeDecodeError, csv.Error, LookupError):
+                            rows = None
+            except Exception as e:
+                maxkb_logger.warning(f"Error detecting encoding: {e}")
+
+        if rows is None:
+            raise Exception(f"CSV解析失败：文件编码无法识别，请确认文件为 UTF-8/GBK/GB18030 编码")
 
         if len(rows) == 0:
             raise Exception("CSV文件为空")
 
         # 第一行为标题
-        header = rows[0]
-        header = [h.strip().lower() for h in header]
+        header = [h.strip().lower() for h in rows[0]]
 
         # 查找label和value列
         label_index = None
