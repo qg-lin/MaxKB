@@ -56,7 +56,7 @@ def generate_example(variable_list):
 
 
 def generate_content(input_variable, variable_list, prompt_template_str=prompt):
-    properties = generate_properties(variable_list)
+    properties = json.dumps(generate_properties(variable_list), ensure_ascii=False)
     prompt_template = PromptTemplate.from_template(prompt_template_str, template_format='jinja2')
     value = prompt_template.format(properties=properties, question=input_variable)
     return value
@@ -89,9 +89,11 @@ class BaseParameterExtractionNode(IParameterExtractionNode):
             self.context[key] = value
         self.context['result'] = details.get('result')
         self.context['request'] = details.get('request')
+        self.context['prompt'] = details.get('prompt')
         self.context['exception_message'] = details.get('err_message')
 
-    def execute(self, input_variable, variable_list, model_params_setting, model_id, **kwargs) -> NodeResult:
+    def execute(self, input_variable, variable_list, model_params_setting, model_id, prompt_type='system',
+                custom_prompt='', **kwargs) -> NodeResult:
         input_variable = str(input_variable)
         self.context['request'] = input_variable
         if model_params_setting is None:
@@ -99,26 +101,24 @@ class BaseParameterExtractionNode(IParameterExtractionNode):
         workspace_id = self.workflow_manage.get_body().get('workspace_id')
         chat_model = get_model_instance_by_model_workspace_id(model_id, workspace_id,
                                                               **model_params_setting)
-        prompt_type = self.node_params.get('prompt_type', 'system')
-        custom_prompt_text = self.node_params.get('custom_prompt', '')
-        if prompt_type == 'custom' and custom_prompt_text and custom_prompt_text.strip():
-            try:
-                content = generate_content(input_variable, variable_list, custom_prompt_text)
-            except Exception:
-                content = generate_content(input_variable, variable_list)
+        if prompt_type == 'custom' and custom_prompt and custom_prompt.strip():
+            content = generate_content(input_variable, variable_list, custom_prompt)
         else:
             content = generate_content(input_variable, variable_list)
+        self.context['prompt'] = content
         response = chat_model.invoke([HumanMessage(content=content)])
         result = json_loads(response.content, variable_list)
         return NodeResult({'result': result, **result}, {})
 
     def get_details(self, index: int, **kwargs):
+        node_params = self.node_params_serializer.data if self.node_params_serializer is not None else self.node_params
         return {
             'name': self.node.properties.get('stepName'),
             "index": index,
             'run_time': self.context.get('run_time'),
             'type': self.node.type,
-            'prompt_type': self.node_params.get('prompt_type', 'system'),
+            'prompt_type': node_params.get('prompt_type', 'system'),
+            'prompt': self.context.get('prompt'),
             'request': self.context.get('request'),
             'result': self.context.get('result'),
             'status': self.status,

@@ -917,6 +917,17 @@
                 {{ data.request || '-' }}
               </div>
             </div>
+            <div
+              v-if="data.type == WorkflowType.ParameterExtractionNode"
+              class="card-never border-r-6 mt-8"
+            >
+              <h5 class="p-8-12">
+                {{ $t('views.application.form.prompt.label') }}
+              </h5>
+              <div class="p-8-12 border-t-dashed lighter pre-wrap">
+                {{ data.prompt || '-' }}
+              </div>
+            </div>
             <div class="card-never border-r-6 mt-8">
               <h5 class="p-8-12">
                 {{ $t('common.param.outputParam') }}

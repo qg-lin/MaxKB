@@ -21,6 +21,12 @@ class VariableSplittingNodeParamsSerializer(serializers.Serializer):
 
     model_id = serializers.CharField(required=True, label=_("Model id"))
 
+    prompt_type = serializers.ChoiceField(required=False, choices=['system', 'custom'], default='system',
+                                          label=_("Prompt type"))
+
+    custom_prompt = serializers.CharField(required=False, allow_blank=True, default='',
+                                          label=_("Custom prompt"))
+
 
 class IParameterExtractionNode(INode):
     type = 'parameter-extraction-node'
@@ -36,7 +42,10 @@ class IParameterExtractionNode(INode):
             self.node_params_serializer.data.get('input_variable')[1:])
         return self.execute(input_variable, self.node_params_serializer.data['variable_list'],
                             self.node_params_serializer.data['model_params_setting'],
-                            self.node_params_serializer.data['model_id'])
+                            self.node_params_serializer.data['model_id'],
+                            self.node_params_serializer.data.get('prompt_type', 'system'),
+                            self.node_params_serializer.data.get('custom_prompt', ''))
 
-    def execute(self, input_variable, variable_list, model_params_setting, model_id, **kwargs) -> NodeResult:
+    def execute(self, input_variable, variable_list, model_params_setting, model_id, prompt_type='system',
+                custom_prompt='', **kwargs) -> NodeResult:
         pass
