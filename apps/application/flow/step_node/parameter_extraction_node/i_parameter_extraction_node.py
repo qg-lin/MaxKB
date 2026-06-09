@@ -24,7 +24,7 @@ class VariableSplittingNodeParamsSerializer(serializers.Serializer):
     prompt_type = serializers.ChoiceField(required=False, choices=['system', 'custom'], default='system',
                                           label=_("Prompt type"))
 
-    custom_prompt = serializers.CharField(required=False, allow_blank=True, default='',
+    custom_prompt = serializers.CharField(required=False, allow_blank=True, allow_null=True, default='',
                                           label=_("Custom prompt"))
 
 

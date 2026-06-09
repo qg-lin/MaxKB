@@ -55,10 +55,57 @@ def generate_example(variable_list):
     return {variable['field']: None for variable in variable_list}
 
 
-def generate_content(input_variable, variable_list, prompt_template_str=prompt):
+def replace_workflow_references(prompt_template_str, workflow_manage):
+    reference_list = []
+    manager_list = [workflow_manage]
+    parent_workflow_manage = getattr(workflow_manage, 'parentWorkflowManage', None)
+    if parent_workflow_manage is not None:
+        manager_list.append(parent_workflow_manage)
+
+    for manager in manager_list:
+        for field in getattr(manager, 'field_list', []):
+            reference_list.append({
+                'label': f"{field.get('node_name')}.{field.get('value')}",
+                'value': workflow_manage.get_reference_field(field.get('node_id'), [field.get('value')])
+            })
+
+    for manager in manager_list:
+        for field in getattr(manager, 'global_field_list', []):
+            value = workflow_manage.get_reference_field('global', [field.get('value')])
+            reference_list.append({'label': f"全局变量.{field.get('value')}", 'value': value})
+            reference_list.append({'label': f"global.{field.get('value')}", 'value': value})
+
+        for field in getattr(manager, 'chat_field_list', []):
+            reference_list.append({
+                'label': f"chat.{field.get('value')}",
+                'value': workflow_manage.get_reference_field('chat', [field.get('value')])
+            })
+
+    for field in getattr(workflow_manage, 'loop_field_list', []):
+        reference_list.append({
+            'label': f"loop.{field.get('value')}",
+            'value': workflow_manage.get_reference_field('loop', [field.get('value')])
+        })
+
+    reference_list.sort(key=lambda item: len(item.get('label') or ''), reverse=True)
+    reference_variables = {}
+    for reference in reference_list:
+        label = reference.get('label')
+        if not label or label not in prompt_template_str:
+            continue
+        variable_name = f"__workflow_ref_{len(reference_variables)}"
+        prompt_template_str = prompt_template_str.replace(label, variable_name)
+        reference_variables[variable_name] = reference.get('value') or ''
+    return prompt_template_str, reference_variables
+
+
+def generate_content(input_variable, variable_list, prompt_template_str=prompt, workflow_manage=None):
     properties = json.dumps(generate_properties(variable_list), ensure_ascii=False)
+    reference_variables = {}
+    if workflow_manage is not None:
+        prompt_template_str, reference_variables = replace_workflow_references(prompt_template_str, workflow_manage)
     prompt_template = PromptTemplate.from_template(prompt_template_str, template_format='jinja2')
-    value = prompt_template.format(properties=properties, question=input_variable)
+    value = prompt_template.format(properties=properties, question=input_variable, **reference_variables)
     return value
 
 
@@ -101,8 +148,9 @@ class BaseParameterExtractionNode(IParameterExtractionNode):
         workspace_id = self.workflow_manage.get_body().get('workspace_id')
         chat_model = get_model_instance_by_model_workspace_id(model_id, workspace_id,
                                                               **model_params_setting)
-        if prompt_type == 'custom' and custom_prompt and custom_prompt.strip():
-            content = generate_content(input_variable, variable_list, custom_prompt)
+        custom_prompt = custom_prompt or ''
+        if prompt_type == 'custom' and custom_prompt.strip():
+            content = generate_content(input_variable, variable_list, custom_prompt, self.workflow_manage)
         else:
             content = generate_content(input_variable, variable_list)
         self.context['prompt'] = content
