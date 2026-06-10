@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from django.test import TestCase
 
 from application.flow.common import WorkflowMode
+from application.flow.step_node import get_node
 from application.flow.step_node.human_in_the_loop_node.impl.base_human_in_the_loop_node import BaseHumanInTheLoopNode
 
 
@@ -150,3 +151,9 @@ class HumanInTheLoopNodeTest(TestCase):
         self.assertEqual(result.node_variable["branch_id"], "submit")
         self.assertEqual(node.context["user_input"], "More details")
         self.assertIsNone(node.context["confirmed"])
+
+
+class HumanInTheLoopRegistrationTest(TestCase):
+    def test_node_is_registered_for_application_workflow(self):
+        self.assertIs(get_node("human-in-the-loop-node", WorkflowMode.APPLICATION), BaseHumanInTheLoopNode)
+        self.assertIs(get_node("human-in-the-loop-node", WorkflowMode.APPLICATION_LOOP), BaseHumanInTheLoopNode)

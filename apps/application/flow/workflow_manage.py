@@ -196,8 +196,14 @@ class WorkflowManage:
                         is_result = True
                     if n.type == 'loop-node':
                         is_result = True
-                    return {**n.properties.get('node_data'), 'form_data': start_node_data, 'node_data': start_node_data,
-                            'child_node': self.child_node, 'is_result': is_result}
+                    node_params = {**(n.properties.get('node_data') or {})}
+                    if n.type == 'form-node':
+                        node_params['form_data'] = start_node_data
+                    else:
+                        node_params['node_data'] = start_node_data
+                    node_params['child_node'] = self.child_node
+                    node_params['is_result'] = is_result
+                    return node_params
 
                 self.start_node = self.get_node_cls_by_id(node_id, node_details.get('up_node_id_list'),
                                                           get_node_params=get_node_params)

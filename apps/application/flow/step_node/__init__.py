@@ -14,6 +14,7 @@ from .data_source_web_node.impl.base_data_source_web_node import BaseDataSourceW
 from .direct_reply_node import *
 from .document_extract_node import *
 from .form_node import *
+from .human_in_the_loop_node import BaseHumanInTheLoopNode
 from .image_generate_step_node import *
 from .image_to_video_step_node import BaseImageToVideoNode
 from .image_understand_step_node import *
@@ -45,7 +46,7 @@ node_list = [BaseStartStepNode, BaseChatNode, BaseSearchKnowledgeNode, BaseSearc
              BaseConditionNode, BaseReplyNode,
              BaseToolNodeNode, BaseToolLibNodeNode, BaseRerankerNode, BaseApplicationNode,
              BaseDocumentExtractNode,
-             BaseImageUnderstandNode, BaseFormNode, BaseSpeechToTextNode, BaseTextToSpeechNode,
+             BaseImageUnderstandNode, BaseFormNode, BaseHumanInTheLoopNode, BaseSpeechToTextNode, BaseTextToSpeechNode,
              BaseImageGenerateNode, BaseVariableAssignNode, BaseMcpNode, BaseTextToVideoNode, BaseImageToVideoNode,
              BaseVideoUnderstandNode,
              BaseIntentNode, BaseLoopNode, BaseLoopStartStepNode,
