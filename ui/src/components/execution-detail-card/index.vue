@@ -544,6 +544,56 @@
               </div>
             </div>
           </template>
+          <!-- 人工介入 -->
+          <template v-if="data.type === WorkflowType.HumanInTheLoopNode">
+            <div class="card-never border-r-6">
+              <h5 class="p-8-12">
+                {{ $t('common.param.outputParam') }}
+              </h5>
+              <div class="p-8-12 border-t-dashed lighter">
+                <div class="mb-8">
+                  <span class="color-secondary"
+                    >{{ $t('workflow.nodes.humanInTheLoopNode.status') }}:</span
+                  >
+                  {{ data.node_status || data.status || '-' }}
+                </div>
+                <div class="mb-8">
+                  <span class="color-secondary"
+                    >{{ $t('workflow.nodes.humanInTheLoopNode.action') }}:</span
+                  >
+                  {{ data.action || '-' }}
+                </div>
+                <div class="mb-8">
+                  <span class="color-secondary"
+                    >{{ $t('workflow.nodes.humanInTheLoopNode.confirmed') }}:</span
+                  >
+                  {{
+                    data.confirmed === undefined || data.confirmed === null
+                      ? '-'
+                      : String(data.confirmed)
+                  }}
+                </div>
+                <div class="mb-8">
+                  <span class="color-secondary"
+                    >{{ $t('workflow.nodes.humanInTheLoopNode.user_input') }}:</span
+                  >
+                  {{ data.user_input || '-' }}
+                </div>
+                <div class="mb-8">
+                  <span class="color-secondary"
+                    >{{ $t('workflow.nodes.humanInTheLoopNode.comment') }}:</span
+                  >
+                  {{ data.comment || '-' }}
+                </div>
+                <div v-if="data.branch_id" class="mb-8">
+                  <span class="color-secondary"
+                    >{{ $t('workflow.nodes.humanInTheLoopNode.branchId') }}:</span
+                  >
+                  {{ data.branch_id }}
+                </div>
+              </div>
+            </div>
+          </template>
           <!-- 图片理解 -->
           <template v-if="data.type == WorkflowType.ImageUnderstandNode">
             <div class="card-never border-r-6">
