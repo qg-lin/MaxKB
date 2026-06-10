@@ -82,12 +82,14 @@
                 <el-input
                   v-model="action.value"
                   :placeholder="$t('workflow.nodes.humanInTheLoopNode.actions.actionValue')"
+                  @input="refreshBranch"
                 />
               </el-form-item>
               <el-form-item class="action-field">
                 <el-input
                   v-model="action.branch_id"
                   :placeholder="$t('workflow.nodes.humanInTheLoopNode.actions.branchId')"
+                  @input="refreshBranch"
                 />
               </el-form-item>
               <el-tooltip effect="dark" :content="$t('common.delete')" placement="top">
@@ -116,6 +118,7 @@
             <el-input
               v-model="form_data.branch_id"
               :placeholder="$t('workflow.nodes.humanInTheLoopNode.branchId')"
+              @input="refreshBranch"
             />
           </el-form-item>
         </template>
@@ -151,7 +154,7 @@
 
 <script setup lang="ts">
 import { cloneDeep, set } from 'lodash'
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, nextTick, onMounted, ref } from 'vue'
 import { type FormInstance } from 'element-plus'
 import NodeContainer from '@/workflow/common/NodeContainer.vue'
 import { isLastNode } from '@/workflow/common/data'
@@ -215,16 +218,37 @@ function addAction() {
     value: '',
     branch_id: '',
   })
+  refreshBranch()
 }
 
 function deleteAction(index: number) {
   form_data.value.actions.splice(index, 1)
+  refreshBranch()
 }
 
 function handleModeChange(mode: string | number | boolean | undefined) {
   if (mode === 'confirmation' && form_data.value.actions.length === 0) {
     form_data.value.actions = cloneDeep(defaultForm.actions)
   }
+  refreshBranch()
+}
+
+function refreshBranch() {
+  nextTick(() => {
+    const validAnchorIds = props.nodeModel
+      .getDefaultAnchor()
+      .filter((anchor: any) => anchor.type === 'right')
+      .map((anchor: any) => anchor.id)
+
+    const staleEdgeIds = (props.nodeModel.outgoing?.edges || [])
+      .filter((edge: any) => !validAnchorIds.includes(edge.sourceAnchorId))
+      .map((edge: any) => edge.id)
+
+    if (staleEdgeIds.length > 0) {
+      props.nodeModel.graphModel.eventCenter.emit('delete_edge', staleEdgeIds)
+    }
+    props.nodeModel.refreshBranch()
+  })
 }
 
 const validate = () => {
