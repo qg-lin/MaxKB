@@ -63,6 +63,10 @@ type HumanInteractionSetting = {
   mode?: 'confirmation' | 'text'
   runtime_node_id?: string
   chat_record_id?: string
+  payload?: {
+    runtime_node_id?: string
+    chat_record_id?: string
+  }
   title?: string
   content?: string
   actions?: HumanAction[]
@@ -97,6 +101,7 @@ const setting = computed<HumanInteractionSetting>(() => {
       mode: value.mode === 'text' ? 'text' : 'confirmation',
       runtime_node_id: value.runtime_node_id,
       chat_record_id: value.chat_record_id,
+      payload: value.payload || {},
       title: value.title || '',
       content: value.content || '',
       actions: Array.isArray(value.actions) ? value.actions : [],
@@ -110,6 +115,7 @@ const setting = computed<HumanInteractionSetting>(() => {
       mode: 'confirmation',
       title: '',
       content: '',
+      payload: {},
       actions: [],
       placeholder: '',
       submit_label: '',
@@ -128,8 +134,10 @@ function submit(action: string) {
   submitted.value = true
   props.sendMessage?.('', 'old', {
     child_node: props.child_node,
-    runtime_node_id: props.runtime_node_id || setting.value.runtime_node_id,
-    chat_record_id: props.chat_record_id || setting.value.chat_record_id,
+    runtime_node_id:
+      props.runtime_node_id || setting.value.runtime_node_id || setting.value.payload?.runtime_node_id,
+    chat_record_id:
+      props.chat_record_id || setting.value.chat_record_id || setting.value.payload?.chat_record_id,
     node_data: {
       interaction_type: 'human_in_the_loop',
       action,
