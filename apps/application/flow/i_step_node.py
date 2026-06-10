@@ -24,6 +24,7 @@ from common.field.common import InstanceField
 from knowledge.models.knowledge_action import KnowledgeAction, State
 
 chat_cache = cache
+USER_INTERACTION_NODE_TYPES = {'form-node', 'human-in-the-loop-node'}
 
 
 def write_context(step_variable: Dict, global_variable: Dict, node, workflow):
@@ -41,7 +42,13 @@ def write_context(step_variable: Dict, global_variable: Dict, node, workflow):
 
 
 def is_interrupt(node, step_variable: Dict, global_variable: Dict):
-    return node.type == 'form-node' and not node.context.get('is_submit', False)
+    if node.type == 'form-node':
+        return not node.context.get('is_submit', False)
+    return node.type == 'human-in-the-loop-node' and node.context.get('status') == 'waiting'
+
+
+def is_user_interaction_node_type(node_type):
+    return node_type in USER_INTERACTION_NODE_TYPES
 
 
 class WorkFlowPostHandler:

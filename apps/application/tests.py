@@ -1,10 +1,16 @@
+import json
+import time
 from types import SimpleNamespace
 
 from django.test import TestCase
 
 from application.flow.common import WorkflowMode
 from application.flow.step_node import get_node
+from application.flow.step_node.application_node.impl.base_application_node import (
+    write_context_stream as write_application_context_stream,
+)
 from application.flow.step_node.human_in_the_loop_node.impl.base_human_in_the_loop_node import BaseHumanInTheLoopNode
+from application.flow.step_node.loop_node.impl.base_loop_node import loop
 
 
 class FakeWorkflowManage:
@@ -157,3 +163,74 @@ class HumanInTheLoopRegistrationTest(TestCase):
     def test_node_is_registered_for_application_workflow(self):
         self.assertIs(get_node("human-in-the-loop-node", WorkflowMode.APPLICATION), BaseHumanInTheLoopNode)
         self.assertIs(get_node("human-in-the-loop-node", WorkflowMode.APPLICATION_LOOP), BaseHumanInTheLoopNode)
+
+
+class HumanInTheLoopNestedWorkflowTest(TestCase):
+    def test_application_node_stream_interrupts_on_human_in_the_loop_child(self):
+        node_variable = {
+            "result": iter([
+                b"data: " + json.dumps({
+                    "content": "<human_in_the_loop>{}</human_in_the_loop>",
+                    "node_type": "human-in-the-loop-node",
+                    "runtime_node_id": "child-runtime",
+                    "chat_record_id": "child-record",
+                    "child_node": {"node": "child"},
+                    "real_node_id": "child-node",
+                    "view_type": "single_view",
+                    "node_is_end": False,
+                    "usage": {},
+                }).encode("utf-8")
+            ]),
+            "question": "Need approval",
+        }
+        node = SimpleNamespace(context={"start_time": time.time()}, answer_text=None)
+        workflow = SimpleNamespace(is_result=lambda current_node, result: False)
+
+        chunks = list(write_application_context_stream(node_variable, {}, node, workflow))
+
+        self.assertEqual(chunks[0]["node_type"], "human-in-the-loop-node")
+        self.assertTrue(node_variable["is_interrupt_exec"])
+        self.assertEqual(node_variable["child_node"]["runtime_node_id"], "child-runtime")
+
+    def test_loop_node_interrupts_on_human_in_the_loop_child(self):
+        class FakeLoopInstance:
+            def stream(self):
+                yield {
+                    "content": "<human_in_the_loop>{}</human_in_the_loop>",
+                    "node_type": "human-in-the-loop-node",
+                    "runtime_node_id": "child-runtime",
+                    "chat_record_id": "child-record",
+                    "child_node": {"node": "child"},
+                    "real_node_id": "child-node",
+                }
+
+            def get_runtime_details(self):
+                return {"child-runtime": {"type": "human-in-the-loop-node"}}
+
+            def get_record_answer_list(self):
+                return []
+
+            def _cleanup(self):
+                pass
+
+            def is_the_task_interrupted(self):
+                return False
+
+        node = SimpleNamespace(
+            context={"start_time": time.time()},
+            node_params={"loop_type": "ARRAY", "child_node": {}},
+            runtime_node_id="loop-runtime",
+            status=200,
+            err_message="",
+        )
+
+        chunks = list(loop(
+            lambda *args: FakeLoopInstance(),
+            node,
+            lambda current_index: iter([("item", 0), ("next", 1)]),
+        ))
+
+        self.assertEqual(len(chunks), 1)
+        self.assertEqual(chunks[0]["node_type"], "human-in-the-loop-node")
+        self.assertTrue(node.context["is_interrupt_exec"])
+        self.assertEqual(node.context["index"], 0)

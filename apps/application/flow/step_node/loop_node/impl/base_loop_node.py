@@ -12,7 +12,7 @@ from typing import Dict, List
 from django.utils.translation import gettext as _
 
 from application.flow.common import Answer, WorkflowMode
-from application.flow.i_step_node import NodeResult, WorkFlowPostHandler, INode
+from application.flow.i_step_node import NodeResult, WorkFlowPostHandler, INode, is_user_interaction_node_type
 from application.flow.step_node.loop_node.i_loop_node import ILoopNode
 from application.flow.tools import Reasoning
 from application.models import ChatRecord
@@ -189,7 +189,7 @@ def loop(workflow_manage_new_instance, node: INode, generate_loop):
                 node.err_message = chunk.get('content')
                 return
             node_type = chunk.get('node_type')
-            if node_type == 'form-node':
+            if is_user_interaction_node_type(node_type):
                 break_outer = True
                 is_interrupt_exec = True
         start_node_id = None

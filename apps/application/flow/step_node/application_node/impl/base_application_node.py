@@ -6,7 +6,7 @@ import uuid
 from typing import Dict, List
 from django.utils.translation import gettext as _
 from application.flow.common import Answer
-from application.flow.i_step_node import NodeResult, INode
+from application.flow.i_step_node import NodeResult, INode, is_user_interaction_node_type
 from application.flow.step_node.application_node.i_application_node import IApplicationNode
 from application.models import Chat, ChatSourceChoices
 
@@ -64,7 +64,7 @@ def write_context_stream(node_variable: Dict, workflow_variable: Dict, node: INo
         real_node_id = response_content.get('real_node_id')
         node_is_end = response_content.get('node_is_end', False)
         _reasoning_content = (response_content.get('reasoning_content', '') or '')
-        if node_type == 'form-node':
+        if is_user_interaction_node_type(node_type):
             is_interrupt_exec = True
         answer += content
         reasoning_content += _reasoning_content
