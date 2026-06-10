@@ -102,6 +102,30 @@ class HumanInTheLoopNodeTest(TestCase):
         self.assertEqual(node.context["confirmed"], False)
         self.assertEqual(node.context["comment"], "not now")
 
+    def test_confirmation_resume_without_action_branch_routes_action_value(self):
+        node = make_node({
+            "mode": "confirmation",
+            "title": "Continue?",
+            "content": "Run the next step?",
+            "actions": [
+                {"value": "approve", "label": "Approve"},
+                {"value": "reject", "label": "Reject", "branch_id": "reject"},
+            ],
+            "node_data": {
+                "interaction_type": "human_in_the_loop",
+                "action": "approve",
+                "user_input": "",
+                "comment": "",
+                "payload": {},
+            },
+            "is_result": True,
+        })
+
+        result = node.run()
+        list(result.write_context(node, node.workflow_manage))
+
+        self.assertEqual(result.node_variable["branch_id"], "approve")
+
     def test_text_resume_requires_user_input_and_routes_submit(self):
         node = make_node({
             "mode": "text",

@@ -56,7 +56,8 @@ class BaseHumanInTheLoopNode(IHumanInTheLoopNode):
                 submit_label=None, allow_comment=False, branch_id=None, node_data=None, **kwargs) -> NodeResult:
         actions = actions or default_actions()
         if node_data:
-            return self._resume(mode, actions, branch_id or "submit", node_data)
+            default_branch_id = branch_id if mode == "confirmation" else branch_id or "submit"
+            return self._resume(mode, actions, default_branch_id, node_data)
         return self._wait(mode, title, content, actions, placeholder, submit_label, allow_comment)
 
     def _render_text(self, value):
