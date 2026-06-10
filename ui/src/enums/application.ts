@@ -23,6 +23,7 @@ export enum WorkflowType {
   ImageUnderstandNode = 'image-understand-node',
   VariableAssignNode = 'variable-assign-node',
   FormNode = 'form-node',
+  HumanInTheLoopNode = 'human-in-the-loop-node',
   TextToSpeechNode = 'text-to-speech-node',
   SpeechToTextNode = 'speech-to-text-node',
   ImageGenerateNode = 'image-generate-node',

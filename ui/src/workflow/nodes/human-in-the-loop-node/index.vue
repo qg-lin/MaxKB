@@ -1,0 +1,269 @@
+<template>
+  <NodeContainer :nodeModel="nodeModel">
+    <el-card shadow="never" class="card-never" style="--el-card-padding: 12px">
+      <el-form
+        @submit.prevent
+        :model="form_data"
+        label-position="top"
+        require-asterisk-position="right"
+        label-width="auto"
+        ref="humanInTheLoopNodeFormRef"
+        hide-required-asterisk
+      >
+        <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.mode.label')">
+          <el-radio-group v-model="form_data.mode" @change="handleModeChange">
+            <el-radio-button label="confirmation">
+              {{ $t('workflow.nodes.humanInTheLoopNode.mode.confirmation') }}
+            </el-radio-button>
+            <el-radio-button label="text">
+              {{ $t('workflow.nodes.humanInTheLoopNode.mode.text') }}
+            </el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.title')">
+          <el-input
+            v-model="form_data.title"
+            :placeholder="$t('workflow.nodes.humanInTheLoopNode.title')"
+          />
+        </el-form-item>
+
+        <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.content')">
+          <MdEditorMagnify
+            :title="$t('workflow.nodes.humanInTheLoopNode.content')"
+            v-model="form_data.content"
+            style="height: 150px"
+            @submitDialog="submitDialog"
+          />
+        </el-form-item>
+
+        <el-form-item
+          v-if="form_data.mode === 'confirmation'"
+          :label="$t('workflow.nodes.humanInTheLoopNode.actions.label')"
+          @click.prevent
+        >
+          <template #label>
+            <div class="flex-between">
+              <h5 class="lighter">
+                {{ $t('workflow.nodes.humanInTheLoopNode.actions.label') }}
+              </h5>
+              <el-button link type="primary" @click="addAction">
+                <AppIcon iconName="app-add-outlined" class="mr-4"></AppIcon>
+                {{ $t('common.add') }}
+              </el-button>
+            </div>
+          </template>
+
+          <div class="action-list w-full">
+            <div v-for="(action, index) in form_data.actions" :key="index" class="action-row">
+              <el-form-item
+                class="action-field"
+                :prop="`actions.${index}.label`"
+                :rules="{
+                  required: true,
+                  message: $t('workflow.nodes.humanInTheLoopNode.actions.labelRequired'),
+                  trigger: 'blur',
+                }"
+              >
+                <el-input
+                  v-model="action.label"
+                  :placeholder="$t('workflow.nodes.humanInTheLoopNode.actions.actionLabel')"
+                />
+              </el-form-item>
+              <el-form-item
+                class="action-field"
+                :prop="`actions.${index}.value`"
+                :rules="{
+                  required: true,
+                  message: $t('workflow.nodes.humanInTheLoopNode.actions.valueRequired'),
+                  trigger: 'blur',
+                }"
+              >
+                <el-input
+                  v-model="action.value"
+                  :placeholder="$t('workflow.nodes.humanInTheLoopNode.actions.actionValue')"
+                />
+              </el-form-item>
+              <el-form-item class="action-field">
+                <el-input
+                  v-model="action.branch_id"
+                  :placeholder="$t('workflow.nodes.humanInTheLoopNode.actions.branchId')"
+                />
+              </el-form-item>
+              <el-tooltip effect="dark" :content="$t('common.delete')" placement="top">
+                <el-button text type="primary" @click="deleteAction(index)">
+                  <AppIcon iconName="app-delete"></AppIcon>
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
+        </el-form-item>
+
+        <template v-if="form_data.mode === 'text'">
+          <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.placeholder')">
+            <el-input
+              v-model="form_data.placeholder"
+              :placeholder="$t('workflow.nodes.humanInTheLoopNode.placeholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.submitLabel')">
+            <el-input
+              v-model="form_data.submit_label"
+              :placeholder="$t('workflow.nodes.humanInTheLoopNode.submitLabel')"
+            />
+          </el-form-item>
+          <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.branchId')">
+            <el-input
+              v-model="form_data.branch_id"
+              :placeholder="$t('workflow.nodes.humanInTheLoopNode.branchId')"
+            />
+          </el-form-item>
+        </template>
+
+        <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.allowComment')" @click.prevent>
+          <el-switch size="small" v-model="form_data.allow_comment" />
+        </el-form-item>
+
+        <el-form-item
+          v-if="[WorkflowMode.Application, WorkflowMode.ApplicationLoop].includes(workflowMode)"
+          :label="$t('workflow.nodes.aiChatNode.returnContent.label')"
+          @click.prevent
+        >
+          <template #label>
+            <div class="flex align-center">
+              <div class="mr-4">
+                <span>{{ $t('workflow.nodes.aiChatNode.returnContent.label') }}</span>
+              </div>
+              <el-tooltip effect="dark" placement="right" popper-class="max-w-200">
+                <template #content>
+                  {{ $t('workflow.nodes.aiChatNode.returnContent.tooltip') }}
+                </template>
+                <AppIcon iconName="app-warning" class="app-warning-icon"></AppIcon>
+              </el-tooltip>
+            </div>
+          </template>
+          <el-switch size="small" v-model="form_data.is_result" />
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </NodeContainer>
+</template>
+
+<script setup lang="ts">
+import { cloneDeep, set } from 'lodash'
+import { computed, inject, onMounted, ref } from 'vue'
+import { type FormInstance } from 'element-plus'
+import NodeContainer from '@/workflow/common/NodeContainer.vue'
+import { isLastNode } from '@/workflow/common/data'
+import { WorkflowMode } from '@/enums/application'
+import { t } from '@/locales'
+
+const workflowMode = (inject('workflowMode') as WorkflowMode) || WorkflowMode.Application
+const props = defineProps<{ nodeModel: any }>()
+
+const defaultForm = {
+  mode: 'confirmation',
+  title: '',
+  content: '',
+  actions: [
+    { value: 'confirm', label: t('common.confirm'), branch_id: 'confirm' },
+    { value: 'reject', label: t('workflow.nodes.humanInTheLoopNode.reject'), branch_id: 'reject' },
+  ],
+  placeholder: '',
+  submit_label: t('common.submit'),
+  allow_comment: false,
+  branch_id: 'submit',
+  is_result: true,
+}
+
+const humanInTheLoopNodeFormRef = ref<FormInstance>()
+
+const ensureNodeData = (value: any) => {
+  const nodeData = value || {}
+  const merged = {
+    ...cloneDeep(defaultForm),
+    ...nodeData,
+    actions: Array.isArray(nodeData.actions) ? nodeData.actions : cloneDeep(defaultForm.actions),
+  }
+  if (!merged.submit_label) {
+    merged.submit_label = t('common.submit')
+  }
+  if (!merged.branch_id) {
+    merged.branch_id = 'submit'
+  }
+  return merged
+}
+
+const form_data = computed({
+  get: () => {
+    const nodeData = ensureNodeData(props.nodeModel.properties.node_data)
+    set(props.nodeModel.properties, 'node_data', nodeData)
+    return props.nodeModel.properties.node_data
+  },
+  set: (value) => {
+    set(props.nodeModel.properties, 'node_data', value)
+  },
+})
+
+function submitDialog(val: string) {
+  set(props.nodeModel.properties.node_data, 'content', val)
+}
+
+function addAction() {
+  form_data.value.actions.push({
+    label: '',
+    value: '',
+    branch_id: '',
+  })
+}
+
+function deleteAction(index: number) {
+  form_data.value.actions.splice(index, 1)
+}
+
+function handleModeChange(mode: string | number | boolean | undefined) {
+  if (mode === 'confirmation' && form_data.value.actions.length === 0) {
+    form_data.value.actions = cloneDeep(defaultForm.actions)
+  }
+}
+
+const validate = () => {
+  if (form_data.value.mode === 'confirmation' && form_data.value.actions.length === 0) {
+    return Promise.reject({
+      node: props.nodeModel,
+      errMessage: t('workflow.nodes.humanInTheLoopNode.actions.requiredMessage'),
+    })
+  }
+  return humanInTheLoopNodeFormRef.value?.validate().catch((err: any) => {
+    return Promise.reject({ node: props.nodeModel, errMessage: err })
+  })
+}
+
+onMounted(() => {
+  if (typeof props.nodeModel.properties.node_data?.is_result === 'undefined') {
+    if (isLastNode(props.nodeModel)) {
+      set(props.nodeModel.properties.node_data, 'is_result', true)
+    }
+  }
+  set(props.nodeModel, 'validate', validate)
+})
+</script>
+
+<style lang="scss" scoped>
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 32px;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.action-field {
+  margin-bottom: 0;
+}
+</style>

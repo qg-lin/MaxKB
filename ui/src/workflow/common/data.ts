@@ -365,6 +365,54 @@ ${t('workflow.nodes.formNode.form_content_format2')}`,
     },
   },
 }
+export const humanInTheLoopNode = {
+  type: WorkflowType.HumanInTheLoopNode,
+  text: t('workflow.nodes.humanInTheLoopNode.text'),
+  label: t('workflow.nodes.humanInTheLoopNode.label'),
+  height: 260,
+  properties: {
+    width: 600,
+    stepName: t('workflow.nodes.humanInTheLoopNode.label'),
+    node_data: {
+      mode: 'confirmation',
+      title: '',
+      content: '',
+      actions: [
+        { value: 'confirm', label: t('common.confirm'), branch_id: 'confirm' },
+        { value: 'reject', label: t('workflow.nodes.humanInTheLoopNode.reject'), branch_id: 'reject' },
+      ],
+      placeholder: '',
+      submit_label: t('common.submit'),
+      allow_comment: false,
+      branch_id: 'submit',
+      is_result: true,
+    },
+    config: {
+      fields: [
+        {
+          label: t('workflow.nodes.humanInTheLoopNode.action'),
+          value: 'action',
+        },
+        {
+          label: t('workflow.nodes.humanInTheLoopNode.confirmed'),
+          value: 'confirmed',
+        },
+        {
+          label: t('workflow.nodes.humanInTheLoopNode.user_input'),
+          value: 'user_input',
+        },
+        {
+          label: t('workflow.nodes.humanInTheLoopNode.comment'),
+          value: 'comment',
+        },
+        {
+          label: t('workflow.nodes.humanInTheLoopNode.status'),
+          value: 'status',
+        },
+      ],
+    },
+  },
+}
 export const documentExtractNode = {
   type: WorkflowType.DocumentExtractNode,
   text: t('workflow.nodes.documentExtractNode.text'),
@@ -785,7 +833,7 @@ export const menuNodes = [
   },
   {
     label: t('workflow.nodes.classify.businessLogic'),
-    list: [conditionNode, formNode, replyNode, loopNode],
+    list: [conditionNode, formNode, humanInTheLoopNode, replyNode, loopNode],
   },
   {
     label: t('workflow.nodes.classify.dataProcessing'),
@@ -823,7 +871,7 @@ export const applicationLoopMenuNodes = [
   },
   {
     label: t('workflow.nodes.classify.businessLogic'),
-    list: [conditionNode, formNode, replyNode, loopContinueNode, loopBreakNode],
+    list: [conditionNode, formNode, humanInTheLoopNode, replyNode, loopContinueNode, loopBreakNode],
   },
   {
     label: t('workflow.nodes.classify.dataProcessing'),
@@ -969,6 +1017,7 @@ export const nodeDict: any = {
   [WorkflowType.ToolLibCustom]: toolNode,
   [WorkflowType.RerankerNode]: rerankerNode,
   [WorkflowType.FormNode]: formNode,
+  [WorkflowType.HumanInTheLoopNode]: humanInTheLoopNode,
   [WorkflowType.Application]: applicationNode,
   [WorkflowType.DocumentExtractNode]: documentExtractNode,
   [WorkflowType.DocumentSplitNode]: documentSplitNode,
