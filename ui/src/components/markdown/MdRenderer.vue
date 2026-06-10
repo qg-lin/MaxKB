@@ -30,6 +30,15 @@
         v-else-if="item.type === 'form_rander'"
         :form_setting="item.content"
       ></FormRander>
+      <HumanInTheLoopRander
+        :chat_record_id="chat_record_id"
+        :runtime_node_id="runtime_node_id"
+        :child_node="child_node"
+        :disabled="disabled"
+        :send-message="sendMessage"
+        v-else-if="item.type === 'human_in_the_loop'"
+        :interaction_setting="item.content"
+      ></HumanInTheLoopRander>
       <MdPreview
         v-else
         ref="editorRef"
@@ -47,6 +56,7 @@ import { config } from 'md-editor-v3'
 import HtmlRander from './HtmlRander.vue'
 import EchartsRander from './EchartsRander.vue'
 import FormRander from './FormRander.vue'
+import HumanInTheLoopRander from './HumanInTheLoopRander.vue'
 import ReasoningRander from './ReasoningRander.vue'
 import { nanoid } from 'nanoid'
 config({
@@ -90,8 +100,10 @@ const props = withDefaults(
 const editorRef = ref()
 const md_view_list = computed(() => {
   const temp_source = props.source
-  return split_form_rander(
-    split_echarts_rander(split_html_rander(split_quick_question([temp_source]))),
+  return split_human_in_the_loop_rander(
+    split_form_rander(
+      split_echarts_rander(split_html_rander(split_quick_question([temp_source]))),
+    ),
   )
 })
 
@@ -282,6 +294,59 @@ const split_form_rander_ = (source: string, type: string) => {
   })
 
   return result
+}
+
+const split_human_in_the_loop_rander = (result: Array<any>) => {
+  return result
+    .map((item) => split_tag_rander_(item.content, item.type, 'human_in_the_loop'))
+    .reduce((x: any, y: any) => {
+      return [...x, ...y]
+    }, [])
+}
+
+function extractTagContent(html: string, tag: string) {
+  const results: string[] = []
+  const startTag = `<${tag}>`
+  const endTag = `</${tag}>`
+  let startIndex = html.indexOf(startTag)
+
+  while (startIndex !== -1) {
+    const endIndex = html.indexOf(endTag, startIndex)
+    if (endIndex === -1) {
+      break
+    }
+    results.push(html.substring(startIndex + startTag.length, endIndex))
+    startIndex = html.indexOf(startTag, endIndex + endTag.length)
+  }
+
+  return results
+}
+
+const split_tag_rander_ = (source: string, type: string, tag: string) => {
+  const tag_content_list = extractTagContent(source, tag).filter((item) => item)
+  const uuid = nanoid()
+  let source_without_tags = source
+  if (tag_content_list.length > 0) {
+    tag_content_list.forEach((item) => {
+      source_without_tags = source_without_tags.replace(`<${tag}>${item}</${tag}>`, uuid)
+    })
+  }
+  const split_value = source_without_tags
+    .split(uuid)
+    .filter((item) => item !== undefined)
+    .filter((item) => !tag_content_list?.includes(item))
+  return Array.from({ length: tag_content_list.length + split_value.length }, (v, i) => i).map(
+    (index) => {
+      if (index % 2 == 0) {
+        return { type: type, content: split_value[Math.floor(index / 2)] }
+      } else {
+        return {
+          type: tag,
+          content: tag_content_list[Math.floor(index / 2)],
+        }
+      }
+    },
+  )
 }
 </script>
 <style lang="scss" scoped>
