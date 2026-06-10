@@ -19,7 +19,7 @@ from langchain_core.embeddings import Embeddings
 from common.db.search import generate_sql_by_query_dict
 from common.db.sql_execute import select_list
 from common.utils.common import get_file_content
-from common.utils.ts_vecto_util import to_ts_vector, to_query
+from common.utils.ts_vecto_util import to_ts_vector, to_query, to_or_query
 from knowledge.models import Embedding, SearchMode, SourceType
 from knowledge.vector.base_vector import BaseVectorStore, normalize_for_embedding
 from maxkb.conf import PROJECT_DIR
@@ -205,6 +205,7 @@ class KeywordsSearch(ISearch):
                                                            with_table_name=True)
         embedding_model = select_list(exec_sql, [
             to_query(query_text),
+            to_or_query(query_text),
             *exec_params,
             similarity,
             top_number
@@ -232,6 +233,7 @@ class BlendSearch(ISearch):
             len(query_embedding),
             json.dumps(query_embedding),
             to_query(query_text),
+            to_or_query(query_text),
             *exec_params, similarity,
             top_number
         ])

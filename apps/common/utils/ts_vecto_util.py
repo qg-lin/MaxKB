@@ -27,6 +27,10 @@ remove_chars = '\n , :\'<>！@#￥%……&*（）!@#$%^&*()： ；，/"./'
 
 jieba_remove_flag_list = ['x', 'w']
 
+NO_MATCH_TS_QUERY = 'maxkbnomatchtoken'
+CJK_PATTERN = re.compile(r'^[\u4e00-\u9fff]+$')
+TOKEN_PATTERN = re.compile(r'[A-Za-z0-9_]+|[\u4e00-\u9fff]+')
+
 
 def get_word_list(text: str):
     result = []
@@ -86,3 +90,24 @@ def to_query(text: str):
     extract_tags = jieba.lcut(text, cut_all=True)
     result = " ".join(extract_tags)
     return result
+
+
+def to_or_query(text: str, max_terms: int = 12):
+    token_list = jieba.lcut(text, cut_all=True)
+    result = []
+    exist = set()
+    for token in token_list:
+        for word in TOKEN_PATTERN.findall(token):
+            word = word.strip()
+            if not word:
+                continue
+            if CJK_PATTERN.match(word) and len(word) <= 1:
+                continue
+            key = word.lower()
+            if key in exist:
+                continue
+            exist.add(key)
+            result.append(word)
+            if len(result) >= max_terms:
+                return " | ".join(result)
+    return " | ".join(result) if len(result) > 0 else NO_MATCH_TS_QUERY
