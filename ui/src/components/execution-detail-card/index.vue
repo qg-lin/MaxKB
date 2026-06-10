@@ -33,7 +33,11 @@
         <el-icon class="color-success" :size="16" v-if="data.status === 200">
           <CircleCheck />
         </el-icon>
-        <el-icon class="is-loading" :size="16" v-else-if="data.status === 202">
+        <el-icon
+          class="is-loading"
+          :size="16"
+          v-else-if="data.status === 202 || isHumanInTheLoopWaiting"
+        >
           <Loading />
         </el-icon>
         <el-icon class="color-danger" :size="16" v-else>
@@ -43,7 +47,13 @@
     </div>
     <el-collapse-transition>
       <div class="mt-12" v-if="data['show']">
-        <template v-if="data.status === 200 || data.type == WorkflowType.LoopNode">
+        <template
+          v-if="
+            data.status === 200 ||
+            data.type == WorkflowType.LoopNode ||
+            isHumanInTheLoopDetailVisible
+          "
+        >
           <!-- 开始 -->
           <template
             v-if="data.type === WorkflowType.Start || data.type === WorkflowType.Application"
@@ -1374,6 +1384,19 @@ const props = defineProps({
   },
 })
 const isKnowLedge = computed(() => props.type === 'knowledge')
+const isHumanInTheLoopWaiting = computed(
+  () =>
+    props.data?.type === WorkflowType.HumanInTheLoopNode &&
+    (props.data?.node_status === 'waiting' || props.data?.status === 201),
+)
+const isHumanInTheLoopDetailVisible = computed(
+  () =>
+    props.data?.type === WorkflowType.HumanInTheLoopNode &&
+    (props.data?.status === 200 ||
+      props.data?.status === 201 ||
+      props.data?.node_status === 'waiting' ||
+      props.data?.node_status === 'submitted'),
+)
 const currentLoopNode = ref(0)
 const currentParagraph = ref(0)
 const currentWriteContent = ref(0)
