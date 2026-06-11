@@ -57,7 +57,7 @@
           <div ref="actionListRef" class="action-list w-full">
             <div
               v-for="(action, index) in form_data.actions"
-              :key="index"
+              :key="getBranchId(action) || index"
               v-resize="resizeActionAnchors"
               class="action-row"
             >
@@ -239,16 +239,23 @@ function submitDialog(val: string) {
 
 function addAction() {
   const actionValue = getNextActionValue()
-  form_data.value.actions.push({
-    label: '',
-    value: actionValue,
-    branch_id: actionValue,
-  })
+  set(props.nodeModel.properties.node_data, 'actions', [
+    ...form_data.value.actions,
+    {
+      label: '',
+      value: actionValue,
+      branch_id: actionValue,
+    },
+  ])
   refreshBranch()
 }
 
 function deleteAction(index: number) {
-  form_data.value.actions.splice(index, 1)
+  set(
+    props.nodeModel.properties.node_data,
+    'actions',
+    form_data.value.actions.filter((_: any, actionIndex: number) => actionIndex !== index),
+  )
   refreshBranch()
 }
 
