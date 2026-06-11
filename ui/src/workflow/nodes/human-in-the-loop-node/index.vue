@@ -240,7 +240,7 @@ function submitDialog(val: string) {
 function addAction() {
   const actionValue = getNextActionValue()
   set(props.nodeModel.properties.node_data, 'actions', [
-    ...form_data.value.actions,
+    ...cloneDeep(form_data.value.actions),
     {
       label: '',
       value: actionValue,
@@ -254,7 +254,7 @@ function deleteAction(index: number) {
   set(
     props.nodeModel.properties.node_data,
     'actions',
-    form_data.value.actions.filter((_: any, actionIndex: number) => actionIndex !== index),
+    cloneDeep(form_data.value.actions).filter((_: any, actionIndex: number) => actionIndex !== index),
   )
   refreshBranch()
 }
