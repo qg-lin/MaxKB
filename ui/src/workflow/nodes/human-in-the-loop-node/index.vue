@@ -181,27 +181,31 @@ const defaultForm = {
 
 const humanInTheLoopNodeFormRef = ref<FormInstance>()
 
-const ensureNodeData = (value: any) => {
-  const nodeData = value || {}
-  const merged = {
-    ...cloneDeep(defaultForm),
-    ...nodeData,
-    actions: Array.isArray(nodeData.actions) ? nodeData.actions : cloneDeep(defaultForm.actions),
+const ensureNodeData = () => {
+  if (!props.nodeModel.properties.node_data) {
+    set(props.nodeModel.properties, 'node_data', cloneDeep(defaultForm))
   }
-  if (!merged.submit_label) {
-    merged.submit_label = t('common.submit')
+  const nodeData = props.nodeModel.properties.node_data
+  Object.entries(defaultForm).forEach(([key, value]) => {
+    if (typeof nodeData[key] === 'undefined') {
+      set(nodeData, key, cloneDeep(value))
+    }
+  })
+  if (!Array.isArray(nodeData.actions)) {
+    set(nodeData, 'actions', cloneDeep(defaultForm.actions))
   }
-  if (!merged.branch_id) {
-    merged.branch_id = 'submit'
+  if (!nodeData.submit_label) {
+    set(nodeData, 'submit_label', t('common.submit'))
   }
-  return merged
+  if (!nodeData.branch_id) {
+    set(nodeData, 'branch_id', 'submit')
+  }
+  return nodeData
 }
 
 const form_data = computed({
   get: () => {
-    const nodeData = ensureNodeData(props.nodeModel.properties.node_data)
-    set(props.nodeModel.properties, 'node_data', nodeData)
-    return props.nodeModel.properties.node_data
+    return ensureNodeData()
   },
   set: (value) => {
     set(props.nodeModel.properties, 'node_data', value)
