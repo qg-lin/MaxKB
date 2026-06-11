@@ -48,7 +48,7 @@ watch(dialogVisible, (bool) => {
 })
 
 const cloneContent = ref('')
-const footers: any = [null, '=', 0]
+const footers = ['=', 0]
 function openDialog() {
   cloneContent.value = props.modelValue
   dialogVisible.value = true

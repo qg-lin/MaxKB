@@ -8,6 +8,25 @@ class HumanInTheLoopNode extends AppNode {
 }
 
 const getBranchId = (action: any) => action.branch_id || action.value
+const CONFIRMATION_ACTION_ANCHOR_TOP = 300
+const TEXT_SUBMIT_ANCHOR_TOP = 365
+const ACTION_ROW_SPACING = 32
+
+const getBranchAnchorTop = (nodeData: any) => {
+  return nodeData?.mode === 'text' ? TEXT_SUBMIT_ANCHOR_TOP : CONFIRMATION_ACTION_ANCHOR_TOP
+}
+
+const getActionAnchorTop = (
+  actionAnchorList: Array<any> = [],
+  branchId: string,
+  index: number,
+  nodeData: any,
+) => {
+  const actionAnchor = actionAnchorList.find(
+    (item) => item.branch_id === branchId || item.index === index,
+  )
+  return actionAnchor?.anchor_top || getBranchAnchorTop(nodeData) + index * ACTION_ROW_SPACING
+}
 
 class HumanInTheLoopNodeModel extends AppNodeModel {
   refreshBranch() {
@@ -26,7 +45,7 @@ class HumanInTheLoopNodeModel extends AppNodeModel {
       y,
       width,
       height,
-      properties: { node_data },
+      properties: { node_data, action_anchor_list },
     } = this
     const nodeHeight = height || this.properties.height || 260
     const showNode = this.properties.showNode === undefined ? true : this.properties.showNode
@@ -47,13 +66,17 @@ class HumanInTheLoopNodeModel extends AppNodeModel {
             .map((action: any) => getBranchId(action))
             .filter((branchId: string) => branchId)
 
-    const anchorCount = Math.max(branchIds.length, 1)
-    const startY = y - nodeHeight / 2 + 170
-    const spacing = 42
+    const startY = y - nodeHeight / 2 + getBranchAnchorTop(node_data)
+    const spacing = node_data?.mode === 'text' ? 0 : ACTION_ROW_SPACING
     branchIds.forEach((branchId: string, index: number) => {
       anchors.push({
         x: x + width / 2 - 10,
-        y: showNode ? startY + index * spacing - ((anchorCount - 1) * spacing) / 2 : y - 15,
+        y:
+          showNode && node_data?.mode === 'confirmation'
+            ? y - nodeHeight / 2 + getActionAnchorTop(action_anchor_list, branchId, index, node_data)
+            : showNode
+              ? startY + index * spacing
+              : y - 15,
         id: `${id}_${branchId}_right`,
         type: 'right',
       })

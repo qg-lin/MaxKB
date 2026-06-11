@@ -54,8 +54,13 @@
             </div>
           </template>
 
-          <div class="action-list w-full">
-            <div v-for="(action, index) in form_data.actions" :key="index" class="action-row">
+          <div ref="actionListRef" class="action-list w-full">
+            <div
+              v-for="(action, index) in form_data.actions"
+              :key="index"
+              v-resize="resizeActionAnchors"
+              class="action-row"
+            >
               <el-form-item
                 class="action-field"
                 :prop="`actions.${index}.label`"
@@ -180,6 +185,9 @@ const defaultForm = {
 }
 
 const humanInTheLoopNodeFormRef = ref<FormInstance>()
+const actionListRef = ref<HTMLElement>()
+
+const getBranchId = (action: any) => action.branch_id || action.value
 
 const ensureNodeData = () => {
   if (!props.nodeModel.properties.node_data) {
@@ -237,8 +245,50 @@ function handleModeChange(mode: string | number | boolean | undefined) {
   refreshBranch()
 }
 
+function syncActionAnchors() {
+  if (form_data.value.mode !== 'confirmation') {
+    set(props.nodeModel.properties, 'action_anchor_list', [])
+    return false
+  }
+  const actionListElement = actionListRef.value
+  const nodeElement = actionListElement?.closest('.workflow-node-container')
+  if (!actionListElement || !nodeElement) {
+    return false
+  }
+  const nodeRect = nodeElement.getBoundingClientRect()
+  const modelWidth = props.nodeModel.width || props.nodeModel.properties.width || nodeRect.width
+  const scale = nodeRect.width / modelWidth || 1
+  const actionAnchors = Array.from(actionListElement.querySelectorAll<HTMLElement>('.action-row')).map(
+    (row, index) => {
+      const rowRect = row.getBoundingClientRect()
+      const action = form_data.value.actions[index]
+      return {
+        index,
+        branch_id: getBranchId(action),
+        anchor_top: Math.round(((rowRect.top - nodeRect.top + rowRect.height / 2) / scale) * 10) / 10,
+        height: Math.round((rowRect.height / scale) * 10) / 10,
+      }
+    },
+  )
+  const oldActionAnchors = props.nodeModel.properties.action_anchor_list || []
+  if (JSON.stringify(oldActionAnchors) === JSON.stringify(actionAnchors)) {
+    return false
+  }
+  set(props.nodeModel.properties, 'action_anchor_list', actionAnchors)
+  return true
+}
+
+function resizeActionAnchors() {
+  nextTick(() => {
+    if (syncActionAnchors()) {
+      props.nodeModel.refreshBranch()
+    }
+  })
+}
+
 function refreshBranch() {
   nextTick(() => {
+    syncActionAnchors()
     const validAnchorIds = props.nodeModel
       .getDefaultAnchor()
       .filter((anchor: any) => anchor.type === 'right')
@@ -274,6 +324,7 @@ onMounted(() => {
     }
   }
   set(props.nodeModel, 'validate', validate)
+  resizeActionAnchors()
 })
 </script>
 
