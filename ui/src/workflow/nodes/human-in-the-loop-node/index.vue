@@ -187,7 +187,20 @@ const defaultForm = {
 const humanInTheLoopNodeFormRef = ref<FormInstance>()
 const actionListRef = ref<HTMLElement>()
 
-const getBranchId = (action: any) => action.branch_id || action.value
+const getBranchId = (action: any) => action?.branch_id || action?.value || ''
+
+const getNextActionValue = () => {
+  const usedValues = new Set(
+    form_data.value.actions
+      .map((action: any) => getBranchId(action))
+      .filter((branchId: string) => branchId),
+  )
+  let index = form_data.value.actions.length + 1
+  while (usedValues.has(`option_${index}`)) {
+    index += 1
+  }
+  return `option_${index}`
+}
 
 const ensureNodeData = () => {
   if (!props.nodeModel.properties.node_data) {
@@ -225,10 +238,11 @@ function submitDialog(val: string) {
 }
 
 function addAction() {
+  const actionValue = getNextActionValue()
   form_data.value.actions.push({
     label: '',
-    value: '',
-    branch_id: '',
+    value: actionValue,
+    branch_id: actionValue,
   })
   refreshBranch()
 }
@@ -258,18 +272,22 @@ function syncActionAnchors() {
   const nodeRect = nodeElement.getBoundingClientRect()
   const modelWidth = props.nodeModel.width || props.nodeModel.properties.width || nodeRect.width
   const scale = nodeRect.width / modelWidth || 1
-  const actionAnchors = Array.from(actionListElement.querySelectorAll<HTMLElement>('.action-row')).map(
-    (row, index) => {
+  const actionAnchors = Array.from(actionListElement.querySelectorAll<HTMLElement>('.action-row'))
+    .map((row, index) => {
       const rowRect = row.getBoundingClientRect()
       const action = form_data.value.actions[index]
+      const branchId = getBranchId(action)
+      if (!branchId) {
+        return null
+      }
       return {
         index,
-        branch_id: getBranchId(action),
+        branch_id: branchId,
         anchor_top: Math.round(((rowRect.top - nodeRect.top + rowRect.height / 2) / scale) * 10) / 10,
         height: Math.round((rowRect.height / scale) * 10) / 10,
       }
-    },
-  )
+    })
+    .filter((item) => item)
   const oldActionAnchors = props.nodeModel.properties.action_anchor_list || []
   if (JSON.stringify(oldActionAnchors) === JSON.stringify(actionAnchors)) {
     return false
@@ -278,11 +296,19 @@ function syncActionAnchors() {
   return true
 }
 
+let resizeActionAnchorTimer: number | undefined
+
 function resizeActionAnchors() {
-  nextTick(() => {
-    if (syncActionAnchors()) {
-      props.nodeModel.refreshBranch()
-    }
+  if (resizeActionAnchorTimer) {
+    window.cancelAnimationFrame(resizeActionAnchorTimer)
+  }
+  resizeActionAnchorTimer = window.requestAnimationFrame(() => {
+    resizeActionAnchorTimer = undefined
+    nextTick(() => {
+      if (syncActionAnchors()) {
+        props.nodeModel.refreshBranch()
+      }
+    })
   })
 }
 
