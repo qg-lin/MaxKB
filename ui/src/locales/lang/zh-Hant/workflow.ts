@@ -248,6 +248,9 @@ export default {
       placeholder: '佔位提示',
       submitLabel: '提交按鈕文字',
       branchId: '分支 ID',
+      allowReject: '允許拒絕',
+      rejectLabel: '拒絕按鈕文字',
+      rejectBranchId: '拒絕分支 ID',
       allowComment: '允許填寫備註',
       actions: {
         label: '操作項',

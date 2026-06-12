@@ -53,17 +53,20 @@ class BaseHumanInTheLoopNode(IHumanInTheLoopNode):
             self.answer_text = details.get("result")
 
     def execute(self, mode, title=None, content=None, actions=None, placeholder=None,
-                submit_label=None, allow_comment=False, branch_id=None, node_data=None, **kwargs) -> NodeResult:
+                submit_label=None, allow_comment=False, branch_id=None, allow_reject=False,
+                reject_label=None, reject_branch_id=None, node_data=None, **kwargs) -> NodeResult:
         actions = actions or default_actions()
         if node_data:
             default_branch_id = branch_id if mode == "confirmation" else branch_id or "submit"
-            return self._resume(mode, actions, default_branch_id, node_data)
-        return self._wait(mode, title, content, actions, placeholder, submit_label, allow_comment)
+            return self._resume(mode, actions, default_branch_id, allow_reject, reject_branch_id, node_data)
+        return self._wait(
+            mode, title, content, actions, placeholder, submit_label, allow_comment, allow_reject, reject_label,
+        )
 
     def _render_text(self, value):
         return self.workflow_manage.generate_prompt(value or "")
 
-    def _wait(self, mode, title, content, actions, placeholder, submit_label, allow_comment):
+    def _wait(self, mode, title, content, actions, placeholder, submit_label, allow_comment, allow_reject, reject_label):
         flow_params = self.flow_params_serializer.data if self.flow_params_serializer is not None else self.workflow_params
         payload = {
             "interaction_type": "human_in_the_loop",
@@ -76,6 +79,8 @@ class BaseHumanInTheLoopNode(IHumanInTheLoopNode):
             "placeholder": self._render_text(placeholder),
             "submit_label": submit_label or "提交",
             "allow_comment": bool(allow_comment),
+            "allow_reject": bool(allow_reject),
+            "reject_label": reject_label or "拒绝",
             "submitted": False,
         }
         result = f"<human_in_the_loop>{json.dumps(payload, ensure_ascii=False)}</human_in_the_loop>"
@@ -94,30 +99,37 @@ class BaseHumanInTheLoopNode(IHumanInTheLoopNode):
             _is_interrupt=_is_waiting,
         )
 
-    def _resume(self, mode, actions, default_branch_id, node_data):
+    def _resume(self, mode, actions, default_branch_id, allow_reject, reject_branch_id, node_data):
         if node_data.get("interaction_type") != "human_in_the_loop":
             raise AppApiException(500, _("Interaction type error"))
-        action = node_data.get("action")
+        action = node_data.get("action") or "submit"
         user_input = node_data.get("user_input") or ""
-        if mode == "text" and len(user_input.strip()) == 0:
+        if mode == "text" and action == "reject" and not allow_reject:
+            raise AppApiException(500, _("Action value error"))
+        if mode == "text" and action not in ["submit", "reject"]:
+            raise AppApiException(500, _("Action value error"))
+        if mode == "text" and action == "submit" and len(user_input.strip()) == 0:
             raise AppApiException(500, _("User input cannot be empty"))
         action_map = {action_item.get("value"): action_item for action_item in actions}
         if mode == "confirmation" and action not in action_map:
             raise AppApiException(500, _("Action value error"))
         selected = action_map.get(action, {})
-        branch_id = selected.get("branch_id") or default_branch_id or action
+        if mode == "text" and action == "reject":
+            branch_id = reject_branch_id or "reject"
+        else:
+            branch_id = selected.get("branch_id") or default_branch_id or action
         confirmed = True if action == "confirm" else False if action == "reject" else None
         submitted_at = datetime.now(timezone.utc).isoformat()
         return NodeResult(
             {
-                "status": "submitted",
-                "action": action or "submit",
+                "status": "rejected" if mode == "text" and action == "reject" else "submitted",
+                "action": action,
                 "confirmed": confirmed,
                 "user_input": user_input,
                 "comment": node_data.get("comment") or "",
                 "submitted_at": submitted_at,
                 "branch_id": branch_id,
-                "result": user_input,
+                "result": "" if mode == "text" and action == "reject" else user_input,
             },
             {},
             _write_context=_write_context,

@@ -24,6 +24,9 @@ class HumanInTheLoopNodeParamsSerializer(serializers.Serializer):
     submit_label = serializers.CharField(required=False, allow_blank=True, allow_null=True, label=_("Submit label"))
     allow_comment = serializers.BooleanField(required=False, label=_("Allow comment"))
     branch_id = serializers.CharField(required=False, allow_blank=True, allow_null=True, label=_("Branch id"))
+    allow_reject = serializers.BooleanField(required=False, label=_("Allow reject"))
+    reject_label = serializers.CharField(required=False, allow_blank=True, allow_null=True, label=_("Reject label"))
+    reject_branch_id = serializers.CharField(required=False, allow_blank=True, allow_null=True, label=_("Reject branch id"))
     node_data = serializers.DictField(required=False, allow_null=True, label=_("Submitted interaction data"))
     is_result = serializers.BooleanField(required=False, label=_("Whether to return content"))
 
@@ -47,5 +50,6 @@ class IHumanInTheLoopNode(INode):
         return self.execute(**self.node_params_serializer.data, **flow_params)
 
     def execute(self, mode, title=None, content=None, actions=None, placeholder=None,
-                submit_label=None, allow_comment=False, branch_id=None, node_data=None, **kwargs) -> NodeResult:
+                submit_label=None, allow_comment=False, branch_id=None, allow_reject=False,
+                reject_label=None, reject_branch_id=None, node_data=None, **kwargs) -> NodeResult:
         pass

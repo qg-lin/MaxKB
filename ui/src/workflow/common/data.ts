@@ -385,6 +385,9 @@ export const humanInTheLoopNode = {
       submit_label: t('common.submit'),
       allow_comment: false,
       branch_id: 'submit',
+      allow_reject: false,
+      reject_label: t('workflow.nodes.humanInTheLoopNode.reject'),
+      reject_branch_id: 'reject',
       is_result: true,
     },
     config: {

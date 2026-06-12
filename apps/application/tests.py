@@ -158,6 +158,58 @@ class HumanInTheLoopNodeTest(TestCase):
         self.assertEqual(node.context["user_input"], "More details")
         self.assertIsNone(node.context["confirmed"])
 
+    def test_text_first_run_outputs_reject_payload_when_enabled(self):
+        node = make_node({
+            "mode": "text",
+            "title": "Add details",
+            "content": "Please add missing details.",
+            "placeholder": "Type here",
+            "submit_label": "Submit",
+            "branch_id": "submit",
+            "allow_reject": True,
+            "reject_label": "Skip",
+            "reject_branch_id": "skip",
+            "node_data": None,
+            "is_result": True,
+        })
+
+        result = node.run()
+        list(result.write_context(node, node.workflow_manage))
+
+        payload = node.context["interaction_payload"]
+        self.assertTrue(payload["allow_reject"])
+        self.assertEqual(payload["reject_label"], "Skip")
+
+    def test_text_resume_reject_routes_without_user_input(self):
+        node = make_node({
+            "mode": "text",
+            "title": "Add details",
+            "content": "Please add missing details.",
+            "placeholder": "Type here",
+            "submit_label": "Submit",
+            "branch_id": "submit",
+            "allow_reject": True,
+            "reject_label": "Skip",
+            "reject_branch_id": "skip",
+            "node_data": {
+                "interaction_type": "human_in_the_loop",
+                "action": "reject",
+                "user_input": "",
+                "comment": "",
+                "payload": {},
+            },
+            "is_result": True,
+        })
+
+        result = node.run()
+        list(result.write_context(node, node.workflow_manage))
+
+        self.assertEqual(result.node_variable["status"], "rejected")
+        self.assertEqual(result.node_variable["branch_id"], "skip")
+        self.assertEqual(result.node_variable["result"], "")
+        self.assertEqual(node.context["action"], "reject")
+        self.assertEqual(node.context["confirmed"], False)
+
 
 class HumanInTheLoopRegistrationTest(TestCase):
     def test_node_is_registered_for_application_workflow(self):

@@ -248,6 +248,9 @@ export default {
       placeholder: '占位提示',
       submitLabel: '提交按钮文案',
       branchId: '分支 ID',
+      allowReject: '允许拒绝',
+      rejectLabel: '拒绝按钮文案',
+      rejectBranchId: '拒绝分支 ID',
       allowComment: '允许填写备注',
       actions: {
         label: '操作项',

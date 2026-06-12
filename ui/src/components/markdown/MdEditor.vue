@@ -1,5 +1,5 @@
 <template>
-  <MdEditor :language="language" noIconfont noPrettier v-bind="$attrs">
+  <MdEditor :language="language" noIconfont noPrettier noMermaid v-bind="$attrs">
     <template #defFooters>
       <slot name="defFooters"> </slot>
     </template>

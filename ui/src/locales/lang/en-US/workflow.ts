@@ -248,6 +248,9 @@ You are a master of problem optimization, adept at accurately inferring user int
       placeholder: 'Placeholder',
       submitLabel: 'Submit Button Text',
       branchId: 'Branch ID',
+      allowReject: 'Allow Reject',
+      rejectLabel: 'Reject Button Text',
+      rejectBranchId: 'Reject Branch ID',
       allowComment: 'Allow Comment',
       actions: {
         label: 'Actions',

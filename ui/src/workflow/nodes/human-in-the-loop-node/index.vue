@@ -119,13 +119,48 @@
               :placeholder="$t('workflow.nodes.humanInTheLoopNode.submitLabel')"
             />
           </el-form-item>
-          <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.branchId')">
-            <el-input
-              v-model="form_data.branch_id"
-              :placeholder="$t('workflow.nodes.humanInTheLoopNode.branchId')"
-              @input="refreshBranch"
-            />
-          </el-form-item>
+          <div ref="textBranchListRef" class="w-full">
+            <el-form-item
+              v-resize="resizeActionAnchors"
+              class="text-branch-row"
+              :label="$t('workflow.nodes.humanInTheLoopNode.branchId')"
+            >
+              <el-input
+                v-model="form_data.branch_id"
+                :placeholder="$t('workflow.nodes.humanInTheLoopNode.branchId')"
+                @input="refreshBranch"
+              />
+            </el-form-item>
+            <el-form-item
+              :label="$t('workflow.nodes.humanInTheLoopNode.allowReject')"
+              @click.prevent
+            >
+              <el-switch
+                size="small"
+                v-model="form_data.allow_reject"
+                @change="refreshBranch"
+              />
+            </el-form-item>
+            <template v-if="form_data.allow_reject">
+              <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.rejectLabel')">
+                <el-input
+                  v-model="form_data.reject_label"
+                  :placeholder="$t('workflow.nodes.humanInTheLoopNode.rejectLabel')"
+                />
+              </el-form-item>
+              <el-form-item
+                v-resize="resizeActionAnchors"
+                class="text-branch-row"
+                :label="$t('workflow.nodes.humanInTheLoopNode.rejectBranchId')"
+              >
+                <el-input
+                  v-model="form_data.reject_branch_id"
+                  :placeholder="$t('workflow.nodes.humanInTheLoopNode.rejectBranchId')"
+                  @input="refreshBranch"
+                />
+              </el-form-item>
+            </template>
+          </div>
         </template>
 
         <el-form-item :label="$t('workflow.nodes.humanInTheLoopNode.allowComment')" @click.prevent>
@@ -181,11 +216,15 @@ const defaultForm = {
   submit_label: t('common.submit'),
   allow_comment: false,
   branch_id: 'submit',
+  allow_reject: false,
+  reject_label: t('workflow.nodes.humanInTheLoopNode.reject'),
+  reject_branch_id: 'reject',
   is_result: true,
 }
 
 const humanInTheLoopNodeFormRef = ref<FormInstance>()
 const actionListRef = ref<HTMLElement>()
+const textBranchListRef = ref<HTMLElement>()
 
 const getBranchId = (action: any) => action?.branch_id || action?.value || ''
 
@@ -220,6 +259,12 @@ const ensureNodeData = () => {
   }
   if (!nodeData.branch_id) {
     set(nodeData, 'branch_id', 'submit')
+  }
+  if (!nodeData.reject_label) {
+    set(nodeData, 'reject_label', t('workflow.nodes.humanInTheLoopNode.reject'))
+  }
+  if (!nodeData.reject_branch_id) {
+    set(nodeData, 'reject_branch_id', 'reject')
   }
   return nodeData
 }
@@ -303,6 +348,46 @@ function syncActionAnchors() {
   return true
 }
 
+function syncTextAnchors() {
+  if (form_data.value.mode !== 'text') {
+    set(props.nodeModel.properties, 'text_anchor_list', [])
+    return false
+  }
+  const textBranchListElement = textBranchListRef.value
+  const nodeElement = textBranchListElement?.closest('.workflow-node-container')
+  if (!textBranchListElement || !nodeElement) {
+    return false
+  }
+  const nodeRect = nodeElement.getBoundingClientRect()
+  const modelWidth = props.nodeModel.width || props.nodeModel.properties.width || nodeRect.width
+  const scale = nodeRect.width / modelWidth || 1
+  const branchIds = [
+    form_data.value.branch_id || 'submit',
+    form_data.value.reject_branch_id || 'reject',
+  ]
+  const textAnchors = Array.from(textBranchListElement.querySelectorAll<HTMLElement>('.text-branch-row'))
+    .map((row, index) => {
+      const rowRect = row.getBoundingClientRect()
+      const branchId = branchIds[index]
+      if (!branchId) {
+        return null
+      }
+      return {
+        index,
+        branch_id: branchId,
+        anchor_top: Math.round(((rowRect.top - nodeRect.top + rowRect.height / 2) / scale) * 10) / 10,
+        height: Math.round((rowRect.height / scale) * 10) / 10,
+      }
+    })
+    .filter((item) => item)
+  const oldTextAnchors = props.nodeModel.properties.text_anchor_list || []
+  if (JSON.stringify(oldTextAnchors) === JSON.stringify(textAnchors)) {
+    return false
+  }
+  set(props.nodeModel.properties, 'text_anchor_list', textAnchors)
+  return true
+}
+
 let resizeActionAnchorTimer: number | undefined
 
 function resizeActionAnchors() {
@@ -312,7 +397,7 @@ function resizeActionAnchors() {
   resizeActionAnchorTimer = window.requestAnimationFrame(() => {
     resizeActionAnchorTimer = undefined
     nextTick(() => {
-      if (syncActionAnchors()) {
+      if (syncActionAnchors() || syncTextAnchors()) {
         props.nodeModel.refreshBranch()
       }
     })
@@ -322,6 +407,7 @@ function resizeActionAnchors() {
 function refreshBranch() {
   nextTick(() => {
     syncActionAnchors()
+    syncTextAnchors()
     const validAnchorIds = props.nodeModel
       .getDefaultAnchor()
       .filter((anchor: any) => anchor.type === 'right')

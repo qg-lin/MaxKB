@@ -39,13 +39,22 @@
         class="mb-8"
         :disabled="isDisabled"
       />
-      <el-button
-        type="primary"
-        :disabled="isDisabled || !userInput.trim()"
-        @click="submit('submit')"
-      >
-        {{ setting.submit_label || $t('common.submit') }}
-      </el-button>
+      <el-space wrap>
+        <el-button
+          type="primary"
+          :disabled="isDisabled || !userInput.trim()"
+          @click="submit('submit')"
+        >
+          {{ setting.submit_label || $t('common.submit') }}
+        </el-button>
+        <el-button
+          v-if="setting.allow_reject"
+          :disabled="isDisabled"
+          @click="submit('reject')"
+        >
+          {{ setting.reject_label || $t('workflow.nodes.humanInTheLoopNode.reject') }}
+        </el-button>
+      </el-space>
     </template>
   </div>
 </template>
@@ -73,6 +82,8 @@ type HumanInteractionSetting = {
   placeholder?: string
   submit_label?: string
   allow_comment?: boolean
+  allow_reject?: boolean
+  reject_label?: string
   submitted?: boolean
 }
 
@@ -108,6 +119,8 @@ const setting = computed<HumanInteractionSetting>(() => {
       placeholder: value.placeholder || '',
       submit_label: value.submit_label || '',
       allow_comment: !!value.allow_comment,
+      allow_reject: !!value.allow_reject,
+      reject_label: value.reject_label || '',
       submitted: !!value.submitted,
     }
   } catch {
@@ -120,6 +133,8 @@ const setting = computed<HumanInteractionSetting>(() => {
       placeholder: '',
       submit_label: '',
       allow_comment: false,
+      allow_reject: false,
+      reject_label: '',
       submitted: false,
     }
   }
