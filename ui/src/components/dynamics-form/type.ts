@@ -1,4 +1,8 @@
 import type { Dict } from '@/api/type/common'
+import type {
+  JsonDisplayConfig,
+  JsonDisplayMode,
+} from '@/components/dynamics-form/items/json-display/types'
 
 interface ViewCardItem {
   /**
@@ -131,6 +135,14 @@ interface FormField {
    * 默认值
    */
   default_value?: any
+  /**
+   * JSON 输入框结构化展示配置。不存在时保持原 CodeMirror JSON 编辑器行为。
+   */
+  json_display_config?: JsonDisplayConfig
+  /**
+   * JSON 输入框展示方式。codemirror 保持原编辑器，structured 使用展示规则。
+   */
+  json_display_mode?: JsonDisplayMode
   /**
    * 是否显示默认值
    */
