@@ -1,7 +1,11 @@
 <template>
   <div class="json-display-config-editor">
     <el-table :data="fields" border size="small" row-key="path">
-      <el-table-column prop="path" label="JSON 路径" min-width="180" />
+      <el-table-column label="JSON 路径" min-width="180">
+        <template #default="{ row }">
+          <el-input v-model="row.path" />
+        </template>
+      </el-table-column>
       <el-table-column label="展示名称" min-width="160">
         <template #default="{ row }">
           <el-input v-model="row.label" />
