@@ -127,7 +127,7 @@ interface FormField {
    */
   required?: boolean
   /**
-   * 无值隐藏 - 当该字段值为空（null/undefined/空串/空数组）时隐藏
+   * 无值隐藏 - 当该字段值为空（null/undefined/空串/空数组/所有属性均为空的对象）时隐藏
    * 优先级：字段级未定义时回退到表单级；字段级已定义则覆盖
    */
   hide_when_no_value?: boolean

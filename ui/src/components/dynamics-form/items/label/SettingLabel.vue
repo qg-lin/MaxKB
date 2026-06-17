@@ -42,6 +42,7 @@
 import DynamicsForm from '@/components/dynamics-form/index.vue'
 import { ref } from 'vue'
 import { cloneDeep, get } from 'lodash'
+import { isEmptyValue } from '@/components/dynamics-form/utils/isEmptyValue'
 const props = defineProps<{
   label: any
   modelValue?: any
@@ -67,13 +68,6 @@ const close = () => {
  * 当前 field是否展示
  * @param field
  */
-const isEmpty = (value: any): boolean => {
-  if (value === null || value === undefined) return true
-  if (typeof value === 'string' && value === '') return true
-  if (Array.isArray(value) && value.length === 0) return true
-  return false
-}
-
 const resolveHideWhenNoValue = (field: any): boolean => {
   if (field.hide_when_no_value !== undefined) return field.hide_when_no_value
   return props.formConfig?.hide_when_no_value === true
@@ -97,7 +91,7 @@ const show = (field: any) => {
   }
 
   if (!field.required && resolveHideWhenNoValue(field)) {
-    if (isEmpty(props.formValue[field.field])) return false
+    if (isEmptyValue(props.formValue[field.field])) return false
   }
 
   return true

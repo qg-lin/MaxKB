@@ -42,6 +42,7 @@ import type { FormInstance } from 'element-plus'
 import type Result from '@/request/Result'
 import _ from 'lodash'
 import { get, post, put, del } from '@/request/index'
+import { isEmptyValue } from '@/components/dynamics-form/utils/isEmptyValue'
 const request = {
   get,
   post,
@@ -86,17 +87,6 @@ const ruleFormRef = ref<FormInstance>()
 
 const formFieldRef = ref<Array<InstanceType<typeof FormItem>>>([])
 /**
- * 严格空值判定：null / undefined / 空串 / 空数组 视为空
- * 0、false、非空对象/Map 视为有值
- */
-const isEmpty = (value: any): boolean => {
-  if (value === null || value === undefined) return true
-  if (typeof value === 'string' && value === '') return true
-  if (Array.isArray(value) && value.length === 0) return true
-  return false
-}
-
-/**
  * 解析"无值隐藏"开关最终值：字段级覆盖表单级
  */
 const resolveHideWhenNoValue = (field: FormField): boolean => {
@@ -128,7 +118,7 @@ const show = (field: FormField) => {
 
   // 2. 新增：无值隐藏（必填字段不做无值隐藏）
   if (!field.required && resolveHideWhenNoValue(field)) {
-    if (isEmpty(formValue.value[field.field])) return false
+    if (isEmptyValue(formValue.value[field.field])) return false
   }
 
   return true
