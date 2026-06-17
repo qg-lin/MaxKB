@@ -42,7 +42,7 @@ import type { FormInstance } from 'element-plus'
 import type Result from '@/request/Result'
 import _ from 'lodash'
 import { get, post, put, del } from '@/request/index'
-import { isEmptyValue } from '@/components/dynamics-form/utils/isEmptyValue'
+import { isFormFieldVisible } from '@/components/dynamics-form/utils/formFieldVisibility'
 const request = {
   get,
   post,
@@ -87,41 +87,11 @@ const ruleFormRef = ref<FormInstance>()
 
 const formFieldRef = ref<Array<InstanceType<typeof FormItem>>>([])
 /**
- * 解析"无值隐藏"开关最终值：字段级覆盖表单级
- */
-const resolveHideWhenNoValue = (field: FormField): boolean => {
-  if (field.hide_when_no_value !== undefined) return field.hide_when_no_value
-  return props.formConfig?.hide_when_no_value === true
-}
-
-/**
  * 当前 field是否展示
  * @param field
  */
 const show = (field: FormField) => {
-  // 1. 现有关系显隐逻辑
-  if (field.relation_show_field_dict) {
-    const keys = Object.keys(field.relation_show_field_dict)
-    for (const index in keys) {
-      const key = keys[index]
-      const v = _.get(formValue.value, key)
-      if (v && v !== undefined && v !== null) {
-        const values = field.relation_show_field_dict[key]
-        if (values && values.length > 0) {
-          if (!values.includes(v)) return false
-        }
-      } else {
-        return false
-      }
-    }
-  }
-
-  // 2. 新增：无值隐藏（必填字段不做无值隐藏）
-  if (!field.required && resolveHideWhenNoValue(field)) {
-    if (isEmptyValue(formValue.value[field.field])) return false
-  }
-
-  return true
+  return isFormFieldVisible({ field, formValue: formValue.value, formConfig: props.formConfig })
 }
 
 const emit = defineEmits(['update:modelValue'])

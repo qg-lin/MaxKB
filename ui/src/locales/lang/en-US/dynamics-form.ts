@@ -44,6 +44,9 @@ export default {
       label: 'Required',
       requiredMessage: 'Required is a required property',
     },
+    showInForm: {
+      label: 'Show in Form',
+    },
     hideWhenNoValue: {
       label: 'Hide When Empty',
       tip: 'Auto-hide this field when its value is empty',

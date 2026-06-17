@@ -44,6 +44,9 @@ export default {
       label: '是否必填',
       requiredMessage: '是否必填 为必填属性',
     },
+    showInForm: {
+      label: '在表单中显示',
+    },
     hideWhenNoValue: {
       label: '无值隐藏',
       tip: '当该字段值为空时自动隐藏',

@@ -50,6 +50,9 @@
     >
       <el-switch v-model="form_data.required" :active-value="true" :inactive-value="false" />
     </el-form-item>
+    <el-form-item :label="$t('dynamicsForm.paramForm.showInForm.label')" @click.prevent>
+      <el-switch v-model="form_data.show_in_form" :active-value="true" :inactive-value="false" />
+    </el-form-item>
     <el-form-item
       :label="$t('dynamicsForm.paramForm.hideWhenNoValue.label')"
       @click.prevent
@@ -118,6 +121,7 @@ const form_data = ref<any>({
   tooltip: '',
   required: false,
   input_type: '',
+  show_in_form: true,
   hide_when_no_value: undefined,
 })
 
@@ -152,6 +156,7 @@ const getData = () => {
     field: form_data.value.field,
     default_value: form_data.value.default_value,
     show_default_value: form_data.value.show_default_value,
+    show_in_form: form_data.value.show_in_form,
     hide_when_no_value: form_data.value.hide_when_no_value,
     ...componentFormRef.value.getData(),
   }
@@ -178,6 +183,7 @@ const rander = (data: any) => {
   if (data.show_default_value !== undefined) {
     form_data.value.show_default_value = data.show_default_value
   }
+  form_data.value.show_in_form = data.show_in_form !== false
   if (data.hide_when_no_value !== undefined) {
     form_data.value.hide_when_no_value = data.hide_when_no_value
   }

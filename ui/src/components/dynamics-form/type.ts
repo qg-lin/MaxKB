@@ -127,6 +127,10 @@ interface FormField {
    */
   required?: boolean
   /**
+   * 是否在表单中显示。未配置时默认显示；仅影响前端展示，不影响默认值和提交数据。
+   */
+  show_in_form?: boolean
+  /**
    * 无值隐藏 - 当该字段值为空（null/undefined/空串/空数组/所有属性均为空的对象）时隐藏
    * 优先级：字段级未定义时回退到表单级；字段级已定义则覆盖
    */

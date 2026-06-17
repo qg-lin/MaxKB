@@ -41,8 +41,8 @@
 <script setup lang="ts">
 import DynamicsForm from '@/components/dynamics-form/index.vue'
 import { ref } from 'vue'
-import { cloneDeep, get } from 'lodash'
-import { isEmptyValue } from '@/components/dynamics-form/utils/isEmptyValue'
+import { cloneDeep } from 'lodash'
+import { isFormFieldVisible } from '@/components/dynamics-form/utils/formFieldVisibility'
 const props = defineProps<{
   label: any
   modelValue?: any
@@ -64,37 +64,8 @@ const close = () => {
   dialogVisible.value = false
   form_data.value = undefined
 }
-/**
- * 当前 field是否展示
- * @param field
- */
-const resolveHideWhenNoValue = (field: any): boolean => {
-  if (field.hide_when_no_value !== undefined) return field.hide_when_no_value
-  return props.formConfig?.hide_when_no_value === true
-}
-
 const show = (field: any) => {
-  if (field.relation_show_field_dict) {
-    const keys = Object.keys(field.relation_show_field_dict)
-    for (const index in keys) {
-      const key = keys[index]
-      const v = get(props.formValue, key)
-      if (v && v !== undefined && v !== null) {
-        const values = field.relation_show_field_dict[key]
-        if (values && values.length > 0) {
-          if (!values.includes(v)) return false
-        }
-      } else {
-        return false
-      }
-    }
-  }
-
-  if (!field.required && resolveHideWhenNoValue(field)) {
-    if (isEmptyValue(props.formValue[field.field])) return false
-  }
-
-  return true
+  return isFormFieldVisible({ field, formValue: props.formValue, formConfig: props.formConfig })
 }
 const submit = () => {
   dynamicsFormRef.value?.validate().then(() => {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { isEmptyValue } from '../isEmptyValue.ts'
+import { isEmptyValue } from '../formFieldVisibility.ts'
 
 assert.equal(
   isEmptyValue({ country: [], city: [], remark: '' }),
@@ -18,4 +18,3 @@ assert.equal(
   true,
   'array with objects whose properties are all empty should be empty',
 )
-
