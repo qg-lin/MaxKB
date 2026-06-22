@@ -10,7 +10,7 @@ __all__ = ['BASE_DIR', 'PROJECT_DIR', 'VERSION', 'CONFIG']
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
-LOG_DIR = os.path.join(PROJECT_DIR, 'logs')
+LOG_DIR = os.path.join('/', 'opt', 'maxkb', 'logs')
 VERSION = '2.0.0'
 
 # load environment variables from .env file
