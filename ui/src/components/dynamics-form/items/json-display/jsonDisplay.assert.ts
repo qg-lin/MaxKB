@@ -80,6 +80,13 @@ const updatedArrayValueShorter = cloneWithJsonPathValue(
 )
 assert.deepEqual(updatedArrayValueShorter.city, ['上海'])
 
+const updatedArrayObjectShorter = cloneWithJsonPathValue(
+  { contacts: [{ name: '张三' }, { name: '李四' }] },
+  'contacts[]',
+  [{ name: '张三' }],
+)
+assert.deepEqual(updatedArrayObjectShorter.contacts, [{ name: '张三' }])
+
 const groups = [
   {
     name: 'A',

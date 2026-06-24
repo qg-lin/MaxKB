@@ -139,6 +139,23 @@
               />
             </template>
           </el-table-column>
+          <el-table-column
+            v-if="!disabled && field.editable"
+            label="操作"
+            width="72"
+            fixed="right"
+          >
+            <template #default="{ $index }">
+              <el-button
+                link
+                type="danger"
+                title="移除"
+                @click="removeArrayRow(field, $index)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
 
@@ -172,6 +189,23 @@
               />
             </template>
           </el-table-column>
+          <el-table-column
+            v-if="!disabled && field.editable"
+            label="操作"
+            width="72"
+            fixed="right"
+          >
+            <template #default="{ $index }">
+              <el-button
+                link
+                type="danger"
+                title="移除"
+                @click="removeArrayRow(field, $index)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
     </template>
@@ -180,6 +214,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Delete } from '@element-plus/icons-vue'
 import type { JsonDisplayConfig, JsonDisplayField, JsonDisplayValueType } from './types'
 import {
   cloneWithJsonPathValue,
@@ -334,6 +369,13 @@ const updateArrayValueField = (field: JsonDisplayField, value: unknown) => {
     'update:modelValue',
     cloneWithJsonPathValue(props.modelValue, field.path, normalizeJsonValueByType(value, 'multi_select')),
   )
+}
+
+const removeArrayRow = (field: JsonDisplayField, index: number) => {
+  if (props.disabled || !field.editable) return
+  const rows = [...getArrayValue(field)]
+  rows.splice(index, 1)
+  emit('update:modelValue', cloneWithJsonPathValue(props.modelValue, field.path, rows))
 }
 </script>
 
