@@ -28,7 +28,9 @@ const chatButtonHtml=
 
 const getChatContainerHtml=(protocol,host,token,query,prefix)=>{
  return `<div id="maxkb-chat-container">
+<div class="maxkb-chat-frame">
 <iframe id="maxkb-chat" allow="microphone" src=${protocol}://${host}${prefix}/${token}?mode=embed${query}></iframe>
+</div>
 <div class="maxkb-operate"><div class="maxkb-closeviewport maxkb-viewportnone"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
 <path d="M7.507 11.6645C7.73712 11.6645 7.94545 11.7578 8.09625 11.9086C8.24706 12.0594 8.34033 12.2677 8.34033 12.4978V16.7976C8.34033 17.0277 8.15378 17.2143 7.92366 17.2143H7.09033C6.86021 17.2143 6.67366 17.0277 6.67366 16.7976V14.5812L3.41075 17.843C3.24803 18.0057 2.98421 18.0057 2.82149 17.843L2.23224 17.2537C2.06952 17.091 2.06952 16.8272 2.23224 16.6645L5.56668 13.3311H3.19634C2.96622 13.3311 2.77967 13.1446 2.77967 12.9145V12.0811C2.77967 11.851 2.96622 11.6645 3.19634 11.6645H7.507ZM16.5991 2.1572C16.7619 1.99448 17.0257 1.99448 17.1884 2.1572L17.7777 2.74645C17.9404 2.90917 17.9404 3.17299 17.7777 3.33571L14.4432 6.66904H16.8136C17.0437 6.66904 17.2302 6.85559 17.2302 7.08571V7.91904C17.2302 8.14916 17.0437 8.33571 16.8136 8.33571H12.5029C12.2728 8.33571 12.0644 8.24243 11.9136 8.09163C11.7628 7.94082 11.6696 7.73249 11.6696 7.50237V3.20257C11.6696 2.97245 11.8561 2.7859 12.0862 2.7859H12.9196C13.1497 2.7859 13.3362 2.97245 13.3362 3.20257V5.419L16.5991 2.1572Z" fill="{{header_font_color}}"/>
 </svg></div>
@@ -59,6 +61,8 @@ const initGuide=(root)=>{
    close_icon.onclick=close_func
 }
 const initChat=(root)=>{
+  const BASE_CHAT_WIDTH = 390
+  const BASE_CHAT_HEIGHT = 620
   // 添加对话icon
   root.insertAdjacentHTML("beforeend",chatButtonHtml)
   // 添加对话框
@@ -68,9 +72,28 @@ const initChat=(root)=>{
   const chat_button_img=root.querySelector('.maxkb-chat-button > img')
   //  对话框元素
   const chat_container=root.querySelector('#maxkb-chat-container')
+  const chat_frame=root.querySelector('.maxkb-chat-frame')
     // 引导层
   const mask_content = root.querySelector('.maxkb-mask > .maxkb-content')
   const mask_tips = root.querySelector('.maxkb-tips')
+  const getViewportScale=()=>{
+    const viewportWidth = Math.max(window.innerWidth - (window.innerWidth <= 480 ? 0 : 32), 320)
+    const viewportHeight = Math.max(window.innerHeight - (window.innerWidth <= 480 ? 0 : 32), 480)
+    return Math.min(viewportWidth / BASE_CHAT_WIDTH, viewportHeight / BASE_CHAT_HEIGHT)
+  }
+  const applyResponsiveChatLayout=()=>{
+    const rect = chat_container.getBoundingClientRect()
+    const scaleSource = rect.width > 0 && rect.height > 0
+      ? Math.min(rect.width / BASE_CHAT_WIDTH, rect.height / BASE_CHAT_HEIGHT)
+      : getViewportScale()
+    const scale = Math.max(0.72, Math.min(1.35, scaleSource))
+    chat_container.style.setProperty('--maxkb-chat-scale', scale.toFixed(4))
+    chat_frame.style.setProperty('--maxkb-chat-scale', scale.toFixed(4))
+    root.style.setProperty('--maxkb-ui-scale', Math.max(0.86, Math.min(1.1, scale * 0.96)).toFixed(4))
+  }
+  const syncResponsiveChatLayout=()=>{
+    window.requestAnimationFrame(applyResponsiveChatLayout)
+  }
  chat_button_img.onload=(event)=>{
  if(mask_content){
     mask_content.style.width = chat_button_img.width + 'px'
@@ -88,8 +111,11 @@ const initChat=(root)=>{
   const close_func=()=>{
     chat_container.style['display']=chat_container.style['display']=='block'?'none':'block'
     chat_button.style['display']=chat_container.style['display']=='block'?'none':'block'
+    if(chat_container.style['display']=='block'){
+      syncResponsiveChatLayout()
+    }
   }
-  close_icon=chat_container.querySelector('.maxkb-chat-close')
+  const close_icon=chat_container.querySelector('.maxkb-chat-close')
   chat_button.onclick = close_func
   close_icon.onclick=close_func
   const viewport_func=()=>{
@@ -102,6 +128,7 @@ const initChat=(root)=>{
       viewport.classList.add('maxkb-viewportnone')
       closeviewport.classList.remove('maxkb-viewportnone')
     }
+    syncResponsiveChatLayout()
   }
      const drag=(e)=>{
             if (['touchmove','touchstart'].includes(e.type)) {
@@ -125,6 +152,11 @@ const initChat=(root)=>{
   }
   viewport.onclick=viewport_func
   closeviewport.onclick=viewport_func
+  window.addEventListener('resize',syncResponsiveChatLayout)
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',syncResponsiveChatLayout)
+  }
+  syncResponsiveChatLayout()
 }
 /**
  * 第一次进来的引导提示
@@ -152,17 +184,20 @@ function initMaxkbStyle(root, maxkbId){
   style.innerText=  `
   /* 放大 */
   #maxkb .maxkb-enlarge {
-      width: 50%!important;
-      height: 100%!important;
-      bottom: 0!important;
-      right: 0 !important;
+      width: min(92vw, 1200px)!important;
+      height: min(96vh, 960px)!important;
+      height: min(96dvh, 960px)!important;
+      bottom: 2vh!important;
+      right: 2vw !important;
   }
   @media only screen and (max-width: 768px){
   #maxkb .maxkb-enlarge {
       width: 100%!important;
-      height: 100%!important;
+      height: 100vh!important;
+      height: 100dvh!important;
       right: 0 !important;
       bottom: 0!important;
+      border-radius: 0!important;
   }
   }
 
@@ -190,10 +225,12 @@ function initMaxkbStyle(root, maxkbId){
       position: fixed;
       {{x_type}}:calc({{x_value}}px + 75px);
       {{y_type}}: calc({{y_value}}px + 0px);
-      padding: 22px 24px 24px;
+      max-width: min(420px, calc(100vw - 104px));
+      padding: clamp(16px, 1vw + 1vh, 24px);
       border-radius: 6px;
       color: #ffffff;
-      font-size: 14px;
+      font-size: clamp(11px, calc(13px * var(--maxkb-ui-scale, 1)), 15px);
+      line-height: 1.6;
       background: #3370FF;
       z-index: 10001;
   }
@@ -212,22 +249,26 @@ function initMaxkbStyle(root, maxkbId){
       border-bottom-color: transparent
   }
   #maxkb .maxkb-tips .maxkb-title {
-      font-size: 20px;
+      font-size: clamp(17px, calc(18px * var(--maxkb-ui-scale, 1)), 22px);
       font-weight: 500;
       margin-bottom: 8px;
   }
+  #maxkb .maxkb-tips p {
+      margin: 0;
+  }
   #maxkb .maxkb-tips .maxkb-button {
       text-align: right;
-      margin-top: 24px;
+      margin-top: clamp(16px, 2vh, 24px);
   }
   #maxkb .maxkb-tips .maxkb-button button {
       border-radius: 4px;
       background: #FFF;
-      padding: 3px 12px;
+      padding: clamp(4px, 0.4vw + 0.3vh, 6px) clamp(12px, 0.8vw + 0.8vh, 16px);
       color: #3370FF;
       cursor: pointer;
       outline: none;
       border: none;
+      font-size: clamp(11px, calc(12px * var(--maxkb-ui-scale, 1)), 14px);
   }
   #maxkb .maxkb-tips .maxkb-button button::after{
       border: none;
@@ -240,19 +281,28 @@ function initMaxkbStyle(root, maxkbId){
 
   }
   #maxkb-chat-container {
-        width: 460px;
-        height: 680px;
+        width: min(84vw, clamp(320px, 27vw, 460px));
+        height: min(82vh, clamp(500px, 68vh, 720px));
+        height: min(82dvh, clamp(500px, 68vh, 720px));
         display:none;
       }
- @media only screen and (max-height: 680px) {
-  #maxkb-chat-container{
-    height: 600px}
- }
   @media only screen and (max-width: 768px) {
         #maxkb-chat-container {
-          width: 100%;
-          height: 70%;
+          width: calc(100vw - 32px);
+          height: min(72vh, calc(100vh - 24px));
+          height: min(72dvh, calc(100dvh - 24px));
+          right: 16px !important;
+          bottom: 8px !important;
+        }
+      }
+  @media only screen and (max-width: 480px) {
+        #maxkb-chat-container {
+          width: 100vw;
+          height: min(76vh, 100vh);
+          height: min(76dvh, 100dvh);
           right: 0 !important;
+          bottom: 0 !important;
+          border-radius: 0 !important;
         }
       }
 
@@ -264,12 +314,19 @@ function initMaxkbStyle(root, maxkbId){
         z-index:10000;
     }
     #maxkb #maxkb-chat-container{
+        --maxkb-chat-scale: 1;
         z-index:10000;position: relative;
               border-radius: 8px;
               border: 1px solid #ffffff;
               background: linear-gradient(188deg, rgba(235, 241, 255, 0.20) 39.6%, rgba(231, 249, 255, 0.20) 94.3%), #EFF0F1;
               box-shadow: 0px 4px 8px 0px rgba(31, 35, 41, 0.10);
               position: fixed;bottom: 16px;right: 16px;overflow: hidden;
+    }
+    #maxkb #maxkb-chat-container .maxkb-chat-frame{
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #ffffff;
     }
 
      #maxkb #maxkb-chat-container .maxkb-operate{
@@ -296,20 +353,24 @@ function initMaxkbStyle(root, maxkbId){
       display:none;
     }
     #maxkb #maxkb-chat-container #maxkb-chat{
-     height:100%;
-     width:100%;
+     width: calc(100% / var(--maxkb-chat-scale, 1));
+     height: calc(100% / var(--maxkb-chat-scale, 1));
      border: none;
-}
+     transform: scale(var(--maxkb-chat-scale, 1));
+     transform-origin: top left;
+    }
     #maxkb #maxkb-chat-container {
-                animation: appear .4s ease-in-out;
+                animation: appear .3s ease-out;
               }
               @keyframes appear {
                 from {
-                  height: 0;;
+                  opacity: 0;
+                  transform: translateY(12px);
                 }
 
                 to {
-                  height: 600px;
+                  opacity: 1;
+                  transform: translateY(0);
                 }
               }`
       .replaceAll('#maxkb ',`#${maxkbId} `)
